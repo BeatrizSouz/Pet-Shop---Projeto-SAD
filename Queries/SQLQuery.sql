@@ -391,7 +391,76 @@ GO
    7. AMBIENTE DIMENSIONAL
    ============================================================ */
 
+   /* ============================================================
+   7.1 DIMENSÃO FUNCIONÁRIO e DIMENSÃO TUTOR 
 
+   Estratégia SCD Tipo 2.
+
+   Quando um atributo histórico for alterado:
+   - a versão atual será encerrada;
+   - uma nova versão será criada;
+   - o histórico será preservado.
+   ============================================================ */
+   CREATE TABLE dw.dim_funcionario (
+        id_funcionario INT IDENTITY(1,1) PRIMARY KEY,
+        cod_funcionario INT NOT NULL,
+        matricula INT NOT NULL,
+        nome_funcionario VARCHAR(100) NOT NULL,
+        CRMV VARCHAR(100) NULL,
+        cidade VARCHAR(100) NOT NULL
+    );
+
+   CREATE TABLE dw.dim_tutor(
+     id_tutor INT IDENTITY(1,1) PRIMARY KEY,
+     cod_tutor INT NOT NULL,
+     cpf VARCHAR(11) NOT NULL,
+     cod_endereco INT NOT NULL,
+     nome_tutor VARCHAR(100) NOT NULL,
+     email VARCHAR(100) NOT NULL,
+     telefone VARCHAR(100) NOT NULL,
+     cidade VARCHAR(100) NOT NULL
+  );
+
+
+   /* ============================================================
+   7.3 DIMENSÃO TEMPO
+
+   A dimensão tempo é carregada separadamente.
+
+   id_tempo:
+   - chave substituta;
+   - valor gerado automaticamente por IDENTITY.
+
+   data_completa:
+   - representa a chave natural da dimensão.
+   ============================================================ */
+
+CREATE TABLE dw.dim_tempo (
+    id_tempo INT IDENTITY(1,1) PRIMARY KEY,
+    data_completa DATE NOT NULL,
+    dia INT NOT NULL,
+    mes INT NOT NULL,
+    nome_mes VARCHAR(20) NOT NULL,
+    trimestre INT NOT NULL,
+    ano INT NOT NULL,
+    numero_dia_semana INT NOT NULL,
+    nome_dia_semana VARCHAR(20) NOT NULL,
+    CONSTRAINT uq_dim_tempo_data_completa UNIQUE (data_completa)
+);
+/* ============================================================
+   7.4 TABELA FATO
+
+   Granularidade:
+   - uma linha para cada atendimento.
+
+   Medidas:
+   - 
+   - .
+
+   Dimensão tempo:
+   - 
+   - .
+   ============================================================ */
 
 
 
