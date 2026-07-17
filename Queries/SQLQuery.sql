@@ -84,6 +84,7 @@ DROP TABLE IF EXISTS dw.quadro_clinico;
 DROP TABLE IF EXISTS dw.dim_tempo;
 DROP TABLE IF EXISTS dw.dim_filial;
 DROP TABLE IF EXISTS dw.dim_servico;
+DROP TABLE IF EXISTS dw.dim_funcao;
 DROP TABLE IF EXISTS dw.dim_funcionario;
 DROP TABLE IF EXISTS dw.dim_tutor;
 DROP TABLE IF EXISTS dw.dim_pet;
@@ -92,6 +93,7 @@ DROP TABLE IF EXISTS staging.stg_atendimento;
 DROP TABLE IF EXISTS staging.stg_quadro_clinico;
 DROP TABLE IF EXISTS staging.stg_filial;
 DROP TABLE IF EXISTS staging.stg_tipo_servico;
+DROP TABLE IF EXISTS staging.stg_funcao;
 DROP TABLE IF EXISTS staging.stg_funcionario;
 DROP TABLE IF EXISTS staging.stg_tutor;
 DROP TABLE IF EXISTS staging.stg_pet;
@@ -331,6 +333,14 @@ SELECT * FROM oltp.atendimento
         data_carga DATE NOT NULL
     );
 
+    CREATE TABLE staging.stg_funcao (
+    cod_funcao INT NOT NULL,
+    cod_funcionario INT NOT NULL,
+    funcao  VARCHAR(100) NOT NULL,
+    data_carga DATE NOT NULL
+    
+);
+
    CREATE TABLE staging.stg_tutor(
      cod_tutor INT NOT NULL,
      cpf VARCHAR(11) NOT NULL,
@@ -546,9 +556,29 @@ CREATE TABLE dw.dim_tempo (
     data_fim DATE NULL,
     registro_atual BIT NOT NULL
   );
+/* ============================================================
+   7.9 DIMENSÃO FUNÇÃO
+   
+   Implementação da estratégia SCD Tipo 1.
+
+   Etapas:
+   1. atualiza os registros existentes;
+   2. insere os novos registros.
+   ============================================================ */
+    
+    CREATE TABLE dw.dim_funcao (
+    id_funcao INT IDENTITY(1,1) PRIMARY KEY,
+    cod_funcao INT NOT NULL,
+    funcao  VARCHAR(100) NOT NULL,
+    data_atualizacao DATE NOT NULL,
+    CONSTRAINT uq_dim_funcao_cod_tipo_funcao UNIQUE (cod_funcao)
+    
+);
+
+
 
 /* ============================================================
-   7.9 TABELA FATO
+   7.10 TABELA FATO
 
    Granularidade:
    - uma linha para cada atendimento.
@@ -563,14 +593,15 @@ CREATE TABLE dw.dim_tempo (
    ============================================================ */
    CREATE TABLE dw.fato_atendimento (
     id_atendimento BIGINT IDENTITY(1,1) PRIMARY KEY,
-    cod_tipo_servico INT NOT NULL,
+    cod_atendimento INT NOT NULL,
+    id_tipo_servico INT NOT NULL,
     id_filial INT NOT NULL,
     id_funcionario INT NOT NULL,
     id_tutor INT NOT NULL,
     id_pet INT NOT NULL,
     id_quadro_clinico INT NOT NULL,
-    id_tempo_abertura INT NOT NULL,
-    id_tempo_fechamento INT NOT NULL,
+    id_tempo_inicio INT NOT NULL,
+    id_tempo_fim INT NOT NULL,
     prioridade VARCHAR(20) NOT NULL,
     quantidade INT NOT NULL,
     valor DECIMAL(10,2) DEFAULT 0.00,
