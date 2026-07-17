@@ -678,12 +678,32 @@ BEGIN
 
      /* Extrai a filial do ambiente operacional. */
     
-    INSERT INTO staging.stg_filial (cod_filial,nome_filial, categoria, data_carga)
-    SELECT cod_tipo_servico, nome_tipo_servico, categoria, @data_carga
+    INSERT INTO staging.stg_filial (cod_filial,cidade,estado,nome_filial,data_carga)
+    SELECT f.cod_filial,e.cidade,e.estado,f.nome_filial,@data_carga
+    FROM oltp.filial f
+    INNER JOIN oltp.endereco e
+    ON f.cod_endereco = e.cod_endereco;
+
+    /* Extrai os funcionário do ambiente operacional. */
+
+    INSERT INTO staging.stg_funcionario (cod_funcionario,cidade,estado,matricula,nome_funcionario,CRMV,data_carga)
+    SELECT f.cod_funcionario,e.cidade,e.estado,f.matricula,f.nome_funcionario,f.CRMV, @data_carga
+    FROM oltp.funcionario f
+    INNER JOIN oltp.endereco e
+    ON f.cod_endereco = e.cod_endereco;
+
+     /* Extrai as funções do ambiente operacional. */
+
+    INSERT INTO staging.stg_funcao (cod_funcao,nome_tipo_servico,data_carga)
+    SELECT cod_tipo_servico, nome_tipo_servico,@data_carga
     FROM oltp.tipo_servico;
 
-    
+   
+   
 
+    
+END;
+GO
 
 
 
