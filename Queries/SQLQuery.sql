@@ -492,6 +492,7 @@ CREATE TABLE dw.dim_tempo (
         data_fim DATE NULL,
         registro_atual BIT NOT NULL
    );
+
    /* ============================================================
    7.6 DIMENSÃO PET
 
@@ -513,10 +514,38 @@ CREATE TABLE dw.dim_tempo (
     registro_atual BIT NOT NULL
     CHECK (Sexo IN ('F', 'M', 'f', 'm'))
 );
+/* ============================================================
+   7.7 DIMENSÃO TURNO
+   
+   Implementação da estratégia SCD Tipo 2.
 
+   Etapas:
+   1. atualiza os registros existentes;
+   2. insere os novos registros.
+   ============================================================ */
+  CREATE TABLE dw.dim_turno(
+    id_turno INT IDENTITY(1,1) PRIMARY KEY,
+    turno VARCHAR(5)
+  );
+  /* ============================================================
+   7.8 DIMENSÃO QUADRO CLINICO
+   
+   - Manhã
+   - Terça
+   - Noite
+   ============================================================ */
+  CREATE TABLE dw.dim_quadro_clinico(
+    id_turno INT IDENTITY(1,1) PRIMARY KEY,
+    cod_quadro_clinico INT,
+    situacao_inicial VARCHAR(500) NOT NULL, 
+    situacao_final VARCHAR(500),
+    data_inicio DATE NOT NULL,
+    data_fim DATE NULL,
+    registro_atual BIT NOT NULL
+  );
 
 /* ============================================================
-   7.8 TABELA FATO
+   7.9 TABELA FATO
 
    Granularidade:
    - uma linha para cada atendimento.
