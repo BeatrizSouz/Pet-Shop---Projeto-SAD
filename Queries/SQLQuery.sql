@@ -16,7 +16,7 @@
    Dimensões:
    - dim_tempo: dimensões estática carregadas por intervalos
    - dim_filial:SCD Tipo 2;
-   - dim_servico:SCD Tipo 1;
+   - dim_tipo_servico:SCD Tipo 1;
    - dim_funcionario:SCD Tipo 2;
    - dim_tutor:SCD Tipo 2;
    - dim_pet:SCD Tipo 2;
@@ -72,7 +72,7 @@ DROP PROCEDURE IF EXISTS dw.sp_carregar_fato_atendimento;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_quadro_clinico;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_tempo;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_filial;
-DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_servico;
+DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_tipo_servico;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_funcionario;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_tutor;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_pet;
@@ -147,6 +147,8 @@ CREATE TABLE oltp.filial (
     nome_filial VARCHAR(100) NOT NULL,
     CONSTRAINT fk_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
 );
+
+select * from oltp.filial
 
 /* Funcionários da Rede*/
 
@@ -320,19 +322,23 @@ SELECT * FROM oltp.atendimento
 
    CREATE TABLE staging.stg_filial (
         cod_filial INT NOT NULL,
-        cod_endereco INT NOT NULL,
+        cidade VARCHAR (100) NOT NULL,
+        estado VARCHAR (100) NOT NULL,
         nome_filial VARCHAR(100) NOT NULL,
         data_carga DATE NOT NULL
    );
 
    CREATE TABLE staging.stg_funcionario (
         cod_funcionario INT NOT NULL,
-        cod_endereco INT,
+        cidade VARCHAR (100) NOT NULL,
+        estado VARCHAR (100) NOT NULL,
         matricula INT NOT NULL,
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
         data_carga DATE NOT NULL
     );
+
+  
 
     CREATE TABLE staging.stg_funcao (
     cod_funcao INT NOT NULL,
@@ -345,7 +351,8 @@ SELECT * FROM oltp.atendimento
    CREATE TABLE staging.stg_tutor(
      cod_tutor INT NOT NULL,
      cpf VARCHAR(11) NOT NULL,
-     cod_endereco INT NOT NULL,
+     cidade VARCHAR (100) NOT NULL,
+     estado VARCHAR (100) NOT NULL,
      nome_tutor VARCHAR(100) NOT NULL,
      email VARCHAR(100) NOT NULL,
      telefone VARCHAR(100) NOT NULL,
@@ -365,11 +372,12 @@ SELECT * FROM oltp.atendimento
 
  CREATE TABLE staging.stg_quadro_clinico(
     cod_quadro_clinico INT NOT NULL,
-    cod_pet INT NOT NULL,
     situacao_inicial VARCHAR(500) NOT NULL, 
     situacao_final VARCHAR(500),
     data_carga DATE NOT NULL 
 );
+
+
 
 CREATE TABLE staging.stg_atendimento (
     cod_atendimento INT NOT NULL,
@@ -418,7 +426,8 @@ GO
         matricula INT NOT NULL,
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
-        cidade VARCHAR(100) NOT NULL,
+        cidade VARCHAR (100) NOT NULL,
+        estado VARCHAR (100) NOT NULL,
         data_inicio DATE NOT NULL,
         data_fim DATE NULL,
         registro_atual BIT NOT NULL
@@ -428,11 +437,11 @@ GO
      id_tutor INT IDENTITY(1,1) PRIMARY KEY,
      cod_tutor INT NOT NULL,
      cpf VARCHAR(11) NOT NULL,
-     cod_endereco INT NOT NULL,
+     cidade VARCHAR (100) NOT NULL,
+     estado VARCHAR (100) NOT NULL,
      nome_tutor VARCHAR(100) NOT NULL,
      email VARCHAR(100) NOT NULL,
      telefone VARCHAR(100) NOT NULL,
-     cidade VARCHAR(100) NOT NULL,
      data_inicio DATE NOT NULL,
      data_fim DATE NULL,
      registro_atual BIT NOT NULL
@@ -480,7 +489,7 @@ CREATE TABLE dw.dim_tempo (
        cod_tipo_servico INT NOT NULL,
        nome_tipo_servico VARCHAR(100) NOT NULL,
        data_atualizacao DATE NOT NULL,
-       CONSTRAINT uq_dim_servico_cod_tipo_servico UNIQUE (cod_tipo_servico)
+       CONSTRAINT uq_dim_tipo_servico_cod_tipo_servico UNIQUE (cod_tipo_servico)
    );
 
    
@@ -499,7 +508,8 @@ CREATE TABLE dw.dim_tempo (
   CREATE TABLE dw.dim_filial (
         id_filial INT IDENTITY(1,1) PRIMARY KEY,
         cod_filial INT NOT NULL,
-        cod_endereco INT NOT NULL,
+        cidade VARCHAR (100) NOT NULL,
+        estado VARCHAR (100) NOT NULL,
         nome_filial VARCHAR(100) NOT NULL,
         data_inicio DATE NOT NULL,
         data_fim DATE NULL,
@@ -610,7 +620,7 @@ CREATE TABLE dw.dim_tempo (
     id_funcao_principal INT NOT NULL,
     id_funcao_secundaria INT NULL,
     id_tempo_inicio INT NOT NULL,
-    id_tempo_fim INT NOT NULL,
+    id_tempo_fim INT NULL,
     quantidade INT DEFAULT 1,
     data_carga DATE NOT NULL,
 
@@ -626,6 +636,56 @@ CREATE TABLE dw.dim_tempo (
     CONSTRAINT fk_atendimento_tempo_inicio FOREIGN KEY (id_tempo_inicio) REFERENCES dw.dim_tempo(id_tempo),
     CONSTRAINT fk_atendimento_tempo_fim FOREIGN KEY (id_tempo_fim) REFERENCES dw.dim_tempo(id_tempo)
 );
+
+GO
+
+/* ============================================================
+   8. PROCEDIMENTO DE CARGA DA STAGING
+
+   Recebe a data da carga por parâmetro.
+
+   Etapas:
+   1. remove os registros da mesma data;
+   2. mantém os registros das outras cargas;
+   3. extrai novamente os dados do OLTP.
+   ============================================================ */
+
+   
+CREATE OR ALTER PROCEDURE staging.sp_carregar_staging
+    @data_carga DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @data_carga IS NULL
+        THROW 50001, 'A data da carga deve ser informada.', 1;
+
+ /* Remove somente os registros da carga que será reprocessada. */
+
+    DELETE FROM staging.stg_tipo_servico WHERE data_carga = @data_carga;
+    DELETE FROM staging.stg_filial WHERE data_carga = @data_carga;
+    DELETE FROM staging.stg_funcionario WHERE data_carga = @data_carga;
+    DELETE FROM staging.stg_tutor WHERE data_carga = @data_carga;
+    DELETE FROM staging.stg_pet WHERE data_carga = @data_carga;
+    DELETE FROM staging.stg_quadro_clinico WHERE data_carga = @data_carga;
+    DELETE FROM staging.stg_atendimento WHERE data_carga = @data_carga;
+
+     /* Extrai os tipos de serviço do ambiente operacional. */
+
+    INSERT INTO staging.stg_tipo_servico (cod_tipo_servico,nome_tipo_servico,data_carga)
+    SELECT cod_tipo_servico, nome_tipo_servico,@data_carga
+    FROM oltp.tipo_servico;
+
+     /* Extrai a filial do ambiente operacional. */
+    
+    INSERT INTO staging.stg_filial (cod_filial,nome_filial, categoria, data_carga)
+    SELECT cod_tipo_servico, nome_tipo_servico, categoria, @data_carga
+    FROM oltp.tipo_servico;
+
+    
+
+
+
 
 
 
