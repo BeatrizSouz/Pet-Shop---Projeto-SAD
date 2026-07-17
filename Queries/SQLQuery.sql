@@ -80,10 +80,11 @@ DROP PROCEDURE IF EXISTS staging.sp_carregar_staging;
 GO
 
 DROP TABLE IF EXISTS dw.fato_atendimento;
-DROP TABLE IF EXISTS dw.quadro_clinico;
+DROP TABLE IF EXISTS dw.dim_quadro_clinico;
 DROP TABLE IF EXISTS dw.dim_tempo;
+DROP TABLE IF EXISTS dw.dim_turno;
 DROP TABLE IF EXISTS dw.dim_filial;
-DROP TABLE IF EXISTS dw.dim_servico;
+DROP TABLE IF EXISTS dw.dim_tipo_servico;
 DROP TABLE IF EXISTS dw.dim_funcao;
 DROP TABLE IF EXISTS dw.dim_funcionario;
 DROP TABLE IF EXISTS dw.dim_tutor;
@@ -475,12 +476,14 @@ CREATE TABLE dw.dim_tempo (
    ============================================================ */
 
    CREATE TABLE dw.dim_tipo_servico (
-       id_servico INT IDENTITY(1,1) PRIMARY KEY,
+       id_tipo_servico INT IDENTITY(1,1) PRIMARY KEY,
        cod_tipo_servico INT NOT NULL,
        nome_tipo_servico VARCHAR(100) NOT NULL,
        data_atualizacao DATE NOT NULL,
        CONSTRAINT uq_dim_servico_cod_tipo_servico UNIQUE (cod_tipo_servico)
    );
+
+   
 
  /* ============================================================
    7.5 DIMENSÃO FILIAL
@@ -518,12 +521,15 @@ CREATE TABLE dw.dim_tempo (
     nome VARCHAR(100) NOT NULL,
     especie VARCHAR(100) NOT NULL,
     porte VARCHAR(100) NOT NULL,
-    sexo CHAR(1) NOT NULL,
+    sexo CHAR(1) NOT NULL
+    CHECK (Sexo IN ('F', 'M', 'f', 'm')),
     data_inicio DATE NOT NULL,
     data_fim DATE NULL,
     registro_atual BIT NOT NULL
-    CHECK (Sexo IN ('F', 'M', 'f', 'm'))
+    
 );
+
+
 /* ============================================================
    7.7 DIMENSÃO TURNO
    
@@ -580,16 +586,17 @@ CREATE TABLE dw.dim_tempo (
 /* ============================================================
    7.10 TABELA FATO
 
+   
    Granularidade:
    - uma linha para cada atendimento.
 
    Medidas:
-   - 
-   - .
+   - quantidade;
+   - tempo_resolucao_horas.
 
    Dimensão tempo:
-   - 
-   - .
+   - id_tempo_abertura;
+   - id_tempo_fechamento.
    ============================================================ */
    CREATE TABLE dw.fato_atendimento (
     id_atendimento BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -600,20 +607,24 @@ CREATE TABLE dw.dim_tempo (
     id_tutor INT NOT NULL,
     id_pet INT NOT NULL,
     id_quadro_clinico INT NOT NULL,
+    id_funcao_principal INT NOT NULL,
+    id_funcao_secundaria INT NULL,
     id_tempo_inicio INT NOT NULL,
     id_tempo_fim INT NOT NULL,
-    prioridade VARCHAR(20) NOT NULL,
-    quantidade INT NOT NULL,
-    valor DECIMAL(10,2) DEFAULT 0.00,
+    quantidade INT DEFAULT 1,
     data_carga DATE NOT NULL,
 
-    CONSTRAINT uq_fato_atendimento_cod_incidente UNIQUE (cod_incidente),
-    CONSTRAINT fk_atendimento_tipo_servico FOREIGN KEY (cod_tipo_servico) REFERENCES oltp.tipo_servico(cod_tipo_servico),
-    CONSTRAINT fk_atendimento_filial FOREIGN KEY (cod_filial) REFERENCES oltp.filial(cod_filial),
-    CONSTRAINT fk_atendimento_funcionario FOREIGN KEY (cod_funcionario) REFERENCES oltp.funcionario(cod_funcionario),
-    CONSTRAINT fk_atendimento_tutor FOREIGN KEY (cod_tutor) REFERENCES oltp.tutor(cod_tutor),
-    CONSTRAINT fk_atendimento_pet FOREIGN KEY (cod_pet) REFERENCES oltp.pet(cod_pet),
-    CONSTRAINT fk_atendimento_quadro_clinico FOREIGN KEY (cod_quadro_clinico) REFERENCES oltp.quadro_clinico(cod_quadro_clinico)
+    CONSTRAINT uq_fato_atendimento_cod_atendimento UNIQUE (cod_atendimento),
+    CONSTRAINT fk_atendimento_tipo_servico FOREIGN KEY (id_tipo_servico) REFERENCES dw.dim_tipo_servico(id_tipo_servico),
+    CONSTRAINT fk_atendimento_filial FOREIGN KEY (id_filial) REFERENCES dw.dim_filial(id_filial),
+    CONSTRAINT fk_atendimento_funcionario FOREIGN KEY (id_funcionario) REFERENCES dw.dim_funcionario(id_funcionario),
+    CONSTRAINT fk_atendimento_tutor FOREIGN KEY (id_tutor) REFERENCES dw.dim_tutor(id_tutor),
+    CONSTRAINT fk_atendimento_pet FOREIGN KEY (id_pet) REFERENCES dw.dim_pet(id_pet),
+    CONSTRAINT fk_atendimento_quadro_clinico FOREIGN KEY (id_quadro_clinico) REFERENCES dw.dim_quadro_clinico(id_quadro_clinico),
+    CONSTRAINT fk_atendimento_funcao_principal FOREIGN KEY (id_funcao_principal) REFERENCES dw.dim_funcao(id_funcao),
+    CONSTRAINT fk_atendimento_funcao_secundaria FOREIGN KEY (id_funcao_secundaria) REFERENCES dw.dim_funcao(id_funcao),
+    CONSTRAINT fk_atendimento_tempo_inicio FOREIGN KEY (id_tempo_inicio) REFERENCES dw.dim_tempo(id_tempo),
+    CONSTRAINT fk_atendimento_tempo_fim FOREIGN KEY (id_tempo_fim) REFERENCES dw.dim_tempo(id_tempo)
 );
 
 
