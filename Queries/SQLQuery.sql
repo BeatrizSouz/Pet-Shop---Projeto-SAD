@@ -466,8 +466,26 @@ CREATE TABLE dw.dim_tempo (
        CONSTRAINT uq_dim_servico_cod_tipo_servico UNIQUE (cod_tipo_servico)
    );
 
-   
+ /* ============================================================
+   7.5 DIMENSÃO FILIAL
 
+     Estratégia SCD Tipo 2.
+
+   Quando um atributo histórico for alterado:
+   - a versão atual será encerrada;
+   - uma nova versão será criada;
+   - o histórico será preservado.
+   ============================================================ */  
+  
+  CREATE TABLE dw.dim_filial (
+        id_filial INT IDENTITY(1,1) PRIMARY KEY,
+        cod_filial INT NOT NULL,
+        cod_endereco INT NOT NULL,
+        nome_filial VARCHAR(100) NOT NULL,
+        data_inicio DATE NOT NULL,
+        data_fim DATE NULL,
+        registro_atual BIT NOT NULL
+   );
 
 /* ============================================================
    7.6 TABELA FATO
