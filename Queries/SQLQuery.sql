@@ -119,7 +119,8 @@ GO
 
 CREATE TABLE oltp.tipo_servico (
     cod_tipo_servico INT IDENTITY(1,1) PRIMARY KEY,
-    nome_tipo_servico VARCHAR(100) NOT NULL
+    nome_tipo_servico VARCHAR(100) NOT NULL,
+    valor_servico DECIMAL(10,2) DEFAULT 0.00
 );
 
 
@@ -206,7 +207,6 @@ CREATE TABLE oltp.atendimento (
     data_inicio DATETIME2 NOT NULL,
     data_fim DATETIME2 NULL,
     prioridade VARCHAR(20) NOT NULL,
-    valor DECIMAL(10,2) DEFAULT 0.00,
     CONSTRAINT fk_atendimento_tipo_servico FOREIGN KEY (cod_tipo_servico) REFERENCES oltp.tipo_servico(cod_tipo_servico),
     CONSTRAINT fk_atendimento_filial FOREIGN KEY (cod_filial) REFERENCES oltp.filial(cod_filial),
     CONSTRAINT fk_atendimento_funcionario FOREIGN KEY (cod_funcionario) REFERENCES oltp.funcionario(cod_funcionario),
@@ -233,12 +233,12 @@ INSERT INTO oltp.endereco (cep, estado, cidade, rua, numero, complemento) VALUES
 
 -- 2. Tipos de Serviço
 
-INSERT INTO oltp.tipo_servico (nome_tipo_servico) VALUES 
-('Banho e Tosa'),
-('Consulta Veterinária'),
-('Vacinação'),
-('Aplicação de Medicamento'),
-('Cirurgia');
+INSERT INTO oltp.tipo_servico (nome_tipo_servico,valor_servico) VALUES 
+('Banho e Tosa',90.00),
+('Consulta Veterinária',60.00),
+('Vacinação',40.00),
+('Aplicação de Medicamento',50.00),
+('Cirurgia',30.00);
 -- 3. Filiais
 INSERT INTO oltp.filial (cod_endereco, nome_filial) VALUES 
 (1, 'Filial Centro'), (2, 'Filial Sul'), (3, 'Filial Norte'), (4, 'Filial Leste'), (5, 'Filial Jardins');
@@ -280,12 +280,12 @@ INSERT INTO oltp.quadro_clinico (situacao_inicial, situacao_final) VALUES
 ('Limpeza de ouvidos', 'Procedimento concluído');
 
 -- 9. Atendimentos
-INSERT INTO oltp.atendimento (cod_tipo_servico, cod_filial, cod_funcionario, cod_tutor, cod_pet, cod_quadro_clinico, data_inicio, data_fim, prioridade, valor) VALUES 
-(1, 1, 1, 1, 1, 1, '2026-07-16 08:00:00', '2026-07-16 09:00:00', 'Baixa',90.00),
-(2, 2, 2, 2, 2, 2, '2026-07-16 09:00:00', '2026-07-16 10:00:00', 'Alta',60.00),
-(5, 3, 3, 3, 3, 3, '2026-07-16 10:00:00', '2026-07-16 12:00:00', 'Alta',40.00),
-(3, 4, 5, 4, 4, 4, '2026-07-16 14:00:00', '2026-07-16 14:30:00', 'Média',50.00),
-(1, 5, 1, 5, 5, 5, '2026-07-16 15:00:00', '2026-07-16 16:00:00', 'Baixa',30.00);
+INSERT INTO oltp.atendimento (cod_tipo_servico, cod_filial, cod_funcionario, cod_tutor, cod_pet, cod_quadro_clinico, data_inicio, data_fim, prioridade) VALUES 
+(1, 1, 1, 1, 1, 1, '2026-07-16 08:00:00', '2026-07-16 09:00:00', 'Baixa'),
+(2, 2, 2, 2, 2, 2, '2026-07-16 09:00:00', '2026-07-16 10:00:00', 'Alta'),
+(5, 3, 3, 3, 3, 3, '2026-07-16 10:00:00', '2026-07-16 12:00:00', 'Alta'),
+(3, 4, 5, 4, 4, 4, '2026-07-16 14:00:00', '2026-07-16 14:30:00', 'Média'),
+(1, 5, 1, 5, 5, 5, '2026-07-16 15:00:00', '2026-07-16 16:00:00', 'Baixa');
 GO
 
 SELECT * FROM oltp.quadro_clinico
@@ -407,7 +407,10 @@ GO
         matricula INT NOT NULL,
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
-        cidade VARCHAR(100) NOT NULL
+        cidade VARCHAR(100) NOT NULL,
+        data_inicio DATE NOT NULL,
+        data_fim DATE NULL,
+        registro_atual BIT NOT NULL
     );
 
    CREATE TABLE dw.dim_tutor(
@@ -418,7 +421,10 @@ GO
      nome_tutor VARCHAR(100) NOT NULL,
      email VARCHAR(100) NOT NULL,
      telefone VARCHAR(100) NOT NULL,
-     cidade VARCHAR(100) NOT NULL
+     cidade VARCHAR(100) NOT NULL,
+     data_inicio DATE NOT NULL,
+     data_fim DATE NULL,
+     registro_atual BIT NOT NULL
   );
 
 
@@ -466,8 +472,35 @@ CREATE TABLE dw.dim_tempo (
        CONSTRAINT uq_dim_servico_cod_tipo_servico UNIQUE (cod_tipo_servico)
    );
 
+<<<<<<< Updated upstream
  /* ============================================================
    7.5 DIMENSÃO FILIAL
+=======
+
+   /* ============================================================
+   7.6 DIMENSÃO PET
+
+   Implementação da estratégia SCD Tipo 2.
+
+   Etapas:
+   1. atualiza os registros existentes;
+   2. insere os novos registros.
+   ============================================================ */
+  CREATE TABLE dw.dim_pet(
+    id_pet INT IDENTITY(1,1) PRIMARY KEY,
+    cod_pet INT,
+    nome VARCHAR(100) NOT NULL,
+    especie VARCHAR(100) NOT NULL,
+    porte VARCHAR(100) NOT NULL,
+    sexo CHAR(1) NOT NULL,
+    data_inicio DATE NOT NULL,
+    data_fim DATE NULL,
+    registro_atual BIT NOT NULL
+    CHECK (Sexo IN ('F', 'M', 'f', 'm'))
+);
+
+
+>>>>>>> Stashed changes
 
      Estratégia SCD Tipo 2.
 
@@ -488,7 +521,7 @@ CREATE TABLE dw.dim_tempo (
    );
 
 /* ============================================================
-   7.6 TABELA FATO
+   7.8 TABELA FATO
 
    Granularidade:
    - uma linha para cada atendimento.
