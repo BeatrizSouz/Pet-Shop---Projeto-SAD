@@ -521,7 +521,7 @@ CREATE TABLE dw.dim_tempo (
    
    Turno:
    - Manhã
-   - Terça
+   - Tarde
    - Noite
    ============================================================ */
   CREATE TABLE dw.dim_turno(
