@@ -15,12 +15,12 @@
 
    Dimensões:
    - dim_tempo: dimensões estática carregadas por intervalos
-   - dim_filial;
-   - dim_servico;
-   - dim_funcionario;
-   - dim_tutor;
-   - dim_pet;
-   - dim_quadro_clinico;
+   - dim_filial:SCD Tipo 2;
+   - dim_servico:SCD Tipo 1;
+   - dim_funcionario:SCD Tipo 2;
+   - dim_tutor:SCD Tipo 2;
+   - dim_pet:SCD Tipo 2;
+   - dim_quadro_clinico:SCD Tipo 2;
 
    Granularidade da fato:
    - uma linha para cada atendimento.
@@ -447,8 +447,30 @@ CREATE TABLE dw.dim_tempo (
     nome_dia_semana VARCHAR(20) NOT NULL,
     CONSTRAINT uq_dim_tempo_data_completa UNIQUE (data_completa)
 );
+
 /* ============================================================
-   7.4 TABELA FATO
+   7.4 DIMENSÃO SERVIÇO
+
+   Implementação da estratégia SCD Tipo 1.
+
+   Etapas:
+   1. atualiza os registros existentes;
+   2. insere os novos registros.
+   ============================================================ */
+
+   CREATE TABLE dw.dim_tipo_servico (
+       id_servico INT IDENTITY(1,1) PRIMARY KEY,
+       cod_tipo_servico INT NOT NULL,
+       nome_tipo_servico VARCHAR(100) NOT NULL,
+       data_atualizacao DATE NOT NULL,
+       CONSTRAINT uq_dim_servico_cod_tipo_servico UNIQUE (cod_tipo_servico)
+   );
+
+   
+
+
+/* ============================================================
+   7.6 TABELA FATO
 
    Granularidade:
    - uma linha para cada atendimento.
@@ -461,6 +483,29 @@ CREATE TABLE dw.dim_tempo (
    - 
    - .
    ============================================================ */
+   CREATE TABLE dw.fato_atendimento (
+    id_atendimento BIGINT IDENTITY(1,1) PRIMARY KEY,
+    cod_tipo_servico INT NOT NULL,
+    id_filial INT NOT NULL,
+    id_funcionario INT NOT NULL,
+    id_tutor INT NOT NULL,
+    id_pet INT NOT NULL,
+    id_quadro_clinico INT NOT NULL,
+    id_tempo_abertura INT NOT NULL,
+    id_tempo_fechamento INT NOT NULL,
+    prioridade VARCHAR(20) NOT NULL,
+    quantidade INT NOT NULL,
+    valor DECIMAL(10,2) DEFAULT 0.00,
+    data_carga DATE NOT NULL,
+
+    CONSTRAINT uq_fato_atendimento_cod_incidente UNIQUE (cod_incidente),
+    CONSTRAINT fk_atendimento_tipo_servico FOREIGN KEY (cod_tipo_servico) REFERENCES oltp.tipo_servico(cod_tipo_servico),
+    CONSTRAINT fk_atendimento_filial FOREIGN KEY (cod_filial) REFERENCES oltp.filial(cod_filial),
+    CONSTRAINT fk_atendimento_funcionario FOREIGN KEY (cod_funcionario) REFERENCES oltp.funcionario(cod_funcionario),
+    CONSTRAINT fk_atendimento_tutor FOREIGN KEY (cod_tutor) REFERENCES oltp.tutor(cod_tutor),
+    CONSTRAINT fk_atendimento_pet FOREIGN KEY (cod_pet) REFERENCES oltp.pet(cod_pet),
+    CONSTRAINT fk_atendimento_quadro_clinico FOREIGN KEY (cod_quadro_clinico) REFERENCES oltp.quadro_clinico(cod_quadro_clinico)
+);
 
 
 
