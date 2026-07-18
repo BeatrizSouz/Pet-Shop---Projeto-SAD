@@ -17,7 +17,6 @@ BEGIN
     DELETE FROM dw.dim_tutor; 
     DELETE FROM dw.dim_turno; 
     DELETE FROM dw.dim_quadro_clinico;
-    DELETE FROM dw.dim_pet; 
     DELETE FROM dw.fato_atendimento;
     
     /* Funcionario - Tipo 2*/
@@ -84,11 +83,11 @@ BEGIN
     
     Merge dw.dim_funcao as destino
     Using (
-    	Select cod_funcao, funcao
+    	Select funcao
     	From staging.stg_funcao
     	Where data_carga = @data_carga
     ) As origem
-    ON(destino.cod_funcao = origem.cod_funcao)
+    ON(destino.funcao= origem.funcao)
     
     When Matched and destino.funcao <> origem.funcao Then
     	Update set
@@ -96,8 +95,8 @@ BEGIN
     		destino.data_atualizacao = @data_carga
     
 	When Not Matched Then
-		Insert (cod_funcao, funcao, data_atualizacao)
-		Values (origem.cod_funcao, origem.funcao, @data_carga);
+		Insert (funcao, data_atualizacao)
+		Values (origem.funcao, @data_carga);
 END
 
 Go
@@ -137,8 +136,50 @@ BEGIN
 END
 
 Go
+
+CREATE or Alter Procedure dw.sp_procedimento_dimensoes_pet_dw
+@data_carga Date
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    IF @data_carga IS NULL
+        THROW 50001, 'A data da carga deve ser informada.', 1;
+     
+    DELETE FROM dw.dim_pet; 
+   	
+    /* Pet - Tipo 2*/
+    
+    Update pet
+    Set 
+    	pet.data_fim = @data_carga,
+    	pet.registro_atual = 0
+    From DW_Atendimentos.dw.dim_pet pet
+    Inner Join DW_Atendimentos.staging.stg_pet sp on pet.cod_pet = sp.cod_pet 
+    WHERE pet.registro_atual = 1
+    	and sp.data_carga = @data_carga
+    	and (pet.cod_pet <> sp.cod_pet
+    		or pet.nome <> sp.nome
+    		or pet.especie <> sp.especie
+    		or pet.raca <> sp.raca
+    		or pet.porte <> sp.porte
+    		or pet.sexo <> sp.sexo);
+	
+    Insert Into DW_Atendimentos.dw.dim_pet (cod_pet, nome, especie, raca, porte, sexo, data_inicio, data_fim, registro_atual)
+    SELECT sp.cod_pet, sp.nome, sp.especie, sp.raca, sp.porte, sp.sexo, @data_carga as data_inicio, NULL as data_fim, 1 as registro_atual
+    FROM DW_Atendimentos.staging.stg_pet sp 
+    where sp.data_carga = @data_carga
+    	and not EXISTS (
+    		Select 1 From DW_Atendimentos.dw.dim_pet dp 
+    		where dp.cod_pet = sp.cod_pet and dp.registro_atual = 1
+    	);
+End
+
+Go
+    
 EXEC dw.sp_procedimento_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18'
+EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18'
 
-Select * from dw.dim_filial
+Select * from dw.dim_pet

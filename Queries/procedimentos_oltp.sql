@@ -57,8 +57,8 @@ BEGIN
     INNER JOIN oltp.endereco e
     ON t.cod_endereco = e.cod_endereco;
 
-    Insert into staging.stg_pet (cod_pet, cod_tutor, nome, especie, raca, porte, sexo, data_carga)
-    SELECT p.cod_pet, p.cod_tutor, p.nome, p.especie, p.raca, p.porte, p.sexo, @data_carga
+    Insert into staging.stg_pet (cod_pet, nome, especie, raca, porte, sexo, data_carga)
+    SELECT p.cod_pet, p.nome, p.especie, p.raca, p.porte, p.sexo, @data_carga
     FROM oltp.pet p;
 
     Insert into staging.stg_quadro_clinico (cod_quadro_clinico, situacao_inicial, situacao_final, data_carga)

@@ -330,7 +330,6 @@ CREATE TABLE
 CREATE TABLE
     staging.stg_pet (
         cod_pet INT NOT NULL,
-        cod_tutor INT NOT NULL,
         nome VARCHAR(100) NOT NULL,
         especie VARCHAR(100) NOT NULL,
         raca VARCHAR(100) NULL,
@@ -559,7 +558,6 @@ Etapas:
 CREATE TABLE
     dw.dim_funcao (
         id_funcao INT IDENTITY (1, 1) PRIMARY KEY,
-        cod_funcao INT NOT NULL,
         funcao VARCHAR(100) NOT NULL,
         data_atualizacao DATE NOT NULL,
     );
