@@ -15,6 +15,9 @@
    2. insere apenas as datas ainda inexistentes;
    3. utiliza IDENTITY para gerar id_tempo.
    ============================================================ */
+Use DW_Atendimentos;
+
+GO
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_dimensao_tempo
     @data_inicial DATE,
@@ -80,5 +83,5 @@ BEGIN
     )
     OPTION
     (MAXRECURSION
-    0);
+    0)
 END;
