@@ -264,42 +264,6 @@ CREATE TABLE
         CONSTRAINT fk_atendimento_quadro_clinico FOREIGN KEY (cod_quadro_clinico) REFERENCES oltp.quadro_clinico (cod_quadro_clinico)
     );
 
-SELECT
-    *
-FROM
-    oltp.quadro_clinico
-SELECT
-    *
-FROM
-    oltp.tipo_servico
-SELECT
-    *
-FROM
-    oltp.endereco
-SELECT
-    *
-FROM
-    oltp.filial
-SELECT
-    *
-FROM
-    oltp.funcionario
-SELECT
-    *
-FROM
-    oltp.funcao
-SELECT
-    *
-FROM
-    oltp.tutor
-SELECT
-    *
-FROM
-    oltp.pet
-SELECT
-    *
-FROM
-    oltp.atendimento
     /* ============================================================
     6. �REA DE STAGING
     
@@ -365,7 +329,7 @@ CREATE TABLE
         especie VARCHAR(100) NOT NULL,
         raca VARCHAR(100) NULL,
         porte VARCHAR(100) NOT NULL,
-        sexo CHAR(1) NOT NULL,
+        sexo CHAR(1) NOT NULL CHECK (Sexo IN ('F', 'M', 'f', 'm')),
         data_carga DATE NOT NULL
     );
 
