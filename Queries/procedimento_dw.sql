@@ -177,9 +177,10 @@ End
 
 Go
     
-EXEC dw.sp_procedimento_dw '2026-07-18'
+EXEC dw.sp_procedimento_dimensoes_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18'
+EXEC dw.sp_carregar_dimensao_tempo '2026-05-18' , '2026-07-18'
 
 Select * from dw.dim_pet

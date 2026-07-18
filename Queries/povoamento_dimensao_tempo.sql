@@ -32,17 +32,14 @@ BEGIN
     IF @data_inicial > @data_final
         THROW 50002, 'A data inicial não pode ser maior que a data final.', 1;
 
-    ;
-    WITH
-        cte_datas
-        AS
-        (
-         SELECT @data_inicial AS data_atual
-            UNION ALL
-                SELECT DATEADD(DAY, 1, data_atual)
-                FROM cte_datas
-                WHERE data_atual < @data_final
-        )
+    ;WITH cte_datas AS
+    (
+        SELECT @data_inicial AS data_completa
+        UNION ALL
+        SELECT DATEADD(DAY, 1, data_completa)
+        FROM cte_datas
+        WHERE data_completa < @data_final
+    )
     INSERT INTO dw.dim_tempo
         (data_completa, dia, mes, nome_mes, trimestre, ano, numero_dia_semana, nome_dia_semana)
     SELECT
@@ -75,7 +72,7 @@ BEGIN
             WHEN 5 THEN 'Sábado'
             WHEN 6 THEN 'Domingo'
         END
-    FROM datas
+    FROM cte_datas datas
     WHERE NOT EXISTS (
         SELECT 1
     FROM dw.dim_tempo destino
@@ -85,3 +82,4 @@ BEGIN
     (MAXRECURSION
     0)
 END;
+

@@ -107,7 +107,10 @@ DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_tutor;
 
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_pet;
 
+DROP PROCEDURE IF EXISTS dw.sp_carregar_dimensao_tempo;
+
 DROP PROCEDURE IF EXISTS staging.sp_carregar_staging;
+
 
 GO
 DROP TABLE IF EXISTS dw.fato_atendimento;
@@ -607,3 +610,71 @@ CREATE TABLE
         CONSTRAINT fk_atendimento_tempo_inicio FOREIGN KEY (id_tempo_inicio) REFERENCES dw.dim_tempo (id_tempo),
         CONSTRAINT fk_atendimento_tempo_fim FOREIGN KEY (id_tempo_fim) REFERENCES dw.dim_tempo (id_tempo)
     );
+/*============================================================
+
+    Criando schema para os agregados 
+
+============================================================*/
+
+IF NOT EXISTS (
+    SELECT
+        1
+    FROM
+        sys.schemas
+    WHERE
+        name = 'ag'
+) EXEC ('CREATE SCHEMA ag');
+
+/*============================================================
+
+    Agregado de distribuição de pets por Espécie
+
+    Dimensão:
+    - tempo 
+    - especie
+
+    Fato: especie 
+
+============================================================*/
+
+DROP TABLE  IF EXISTS ag.fato_especie
+DROP TABLE IF EXISTS ag.dim_especie
+DROP TABLE IF EXISTS ag.dim_tempo
+
+DROP PROCEDURE IF EXISTS ag.sp_carregar_dimensao_tempo
+
+
+GO
+
+
+
+CREATE TABLE
+    ag.dim_especie (
+        id_pet INT PRIMARY KEY,
+        especie VARCHAR(100) NOT NULL
+    );
+
+
+CREATE TABLE
+    ag.dim_tempo (
+        id_tempo INT PRIMARY KEY,
+        data_completa DATE NOT NULL,
+        dia INT NOT NULL,
+        mes INT NOT NULL,
+        nome_mes VARCHAR(20) NOT NULL,
+        trimestre INT NOT NULL,
+        ano INT NOT NULL,
+        numero_dia_semana INT NOT NULL,
+        nome_dia_semana VARCHAR(20) NOT NULL,
+        CONSTRAINT uq_dim_tempo_data_completa UNIQUE (data_completa)
+    );
+
+CREATE TABLE 
+		ag.fato_especie(
+		id_fato_especie BIGINT IDENTITY (1, 1) PRIMARY KEY,
+		id_data INT NOT NULL,
+        id_pet_especie INT NOT NULL,
+        quantidade INT DEFAULT 1,
+        CONSTRAINT fk_data FOREIGN KEY (id_data) REFERENCES ag.dim_tempo(id_tempo),
+        CONSTRAINT fk_especie FOREIGN KEY (id_pet_especie) REFERENCES ag.dim_pet(id_pet)
+);

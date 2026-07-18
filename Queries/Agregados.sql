@@ -2,43 +2,77 @@
 Agregado de distribuição de pets por Espécie
 
 */
-IF NOT EXISTS (
-    SELECT
-        1
-    FROM
-        sys.schemas
-    WHERE
-        name = 'ag'
-) EXEC ('CREATE SCHEMA ag');
-
-CREATE TABLE
-    ag.dim_pet (
-        id_pet INT IDENTITY (1, 1) PRIMARY KEY,
-        cod_pet INT NOT NULL,
-        especie VARCHAR(100) NOT NULL
+CREATE OR ALTER PROCEDURE ag.sp_carregar_dimensao_tempo
+AS
+BEGIN 
+SET NOCOUNT ON; 
+    INSERT INTO ag.dim_tempo(
+        id_tempo, 
+        data_completa, 
+        dia, 
+        mes, 
+        nome_mes, 
+        trimestre, 
+        ano, 
+        numero_dia_semana, 
+        nome_dia_semana
+    )
+    SELECT 
+        t.id_tempo, 
+        t.data_completa, 
+        t.dia, 
+        t.mes, 
+        t.nome_mes, 
+        t.trimestre, 
+        t.ano, 
+        t.numero_dia_semana, 
+        t.nome_dia_semana 
+    FROM dw.dim_tempo t
+   
+    WHERE NOT EXISTS (
+        SELECT 1 
+        FROM ag.dim_tempo destino 
+        WHERE destino.data_completa = t.data_completa
     );
+END;
+GO
 
+CREATE OR ALTER PROCEDURE ag.sp_carregar_dimensao_especie
+AS
+BEGIN 
+SET NOCOUNT ON; 
 
-CREATE TABLE
-    ag.dim_tempo (
-        id_tempo INT IDENTITY (1, 1) PRIMARY KEY,
-        data_completa DATE NOT NULL,
-        dia INT NOT NULL,
-        mes INT NOT NULL,
-        nome_mes VARCHAR(20) NOT NULL,
-        trimestre INT NOT NULL,
-        ano INT NOT NULL,
-        numero_dia_semana INT NOT NULL,
-        nome_dia_semana VARCHAR(20) NOT NULL,
-        CONSTRAINT uq_dim_tempo_data_completa UNIQUE (data_completa)
-    );
+    INSERT INTO ag.dim_especie(
+        id_pet, 
+        especie
+    )
+    SELECT 
+        esp.id_pet, 
+        esp.especie
+    FROM dw.dim_pet esp
+END;
+GO
 
-CREATE TABLE 
-		ag.fato_especie(
-		id_fato_especie BIGINT IDENTITY (1, 1) PRIMARY KEY,
-		id_data INT NOT NULL,
-        id_pet_especie INT NOT NULL,
-        quantidade INT DEFAULT 1
-        CONSTRAINT fk_data FOREIGN KEY (id_data) REFERENCES ag.dim_tempo(id_tempo),
-        CONSTRAINT fk_especie FOREIGN KEY (id_pet_especie) REFERENCES ag.dim_pet(id_pet)
-);
+CREATE OR ALTER PROCEDURE ag.sp_carregar_fato_especie
+AS
+BEGIN 
+SET NOCOUNT ON; 
+
+    INSERT INTO ag.fato_especie(
+        id_data, 
+        id_pet_especie,
+        quantidade
+    )
+    SELECT 
+        t.id_tempo,
+        p.id_pet,
+        sum(f.quantidade)
+    FROM dw.fato_atendimento f
+    JOIN dw.dim_tempo t on (f.id_tempo_inicio = t.id_tempo)
+    JOIN dw.dim_pet p on (f.id_pet = p.id_pet)
+    GROUP BY t.id_tempo, p.id_pet
+END;
+GO
+
+EXEC ag.sp_carregar_fato_especie
+select * from dw.fato_atendimento;
