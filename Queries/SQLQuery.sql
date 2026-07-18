@@ -640,4 +640,8 @@ CREATE TABLE dw.dim_tempo (
     CONSTRAINT fk_atendimento_tempo_inicio FOREIGN KEY (id_tempo_inicio) REFERENCES dw.dim_tempo(id_tempo),
     CONSTRAINT fk_atendimento_tempo_fim FOREIGN KEY (id_tempo_fim) REFERENCES dw.dim_tempo(id_tempo)
 );
-GO
+
+
+
+
+
