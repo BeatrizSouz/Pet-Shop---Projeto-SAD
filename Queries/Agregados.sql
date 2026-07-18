@@ -15,13 +15,7 @@ CREATE TABLE
     ag.dim_pet (
         id_pet INT IDENTITY (1, 1) PRIMARY KEY,
         cod_pet INT NOT NULL,
-        especie VARCHAR(100) NOT NULL,
-        raca VARCHAR(100) NULL,
-        porte VARCHAR(100) NOT NULL,
-        sexo CHAR(1) NOT NULL CHECK (Sexo IN ('F', 'M', 'f', 'm')),
-        data_inicio DATE NOT NULL,
-        data_fim DATE NULL,
-        registro_atual BIT NOT NULL
+        especie VARCHAR(100) NOT NULL
     );
 
 
@@ -43,7 +37,8 @@ CREATE TABLE
 		ag.fato_especie(
 		id_fato_especie BIGINT IDENTITY (1, 1) PRIMARY KEY,
 		id_data INT NOT NULL,
-        id_pet INT NOT NULL,
+        id_pet_especie INT NOT NULL,
         quantidade INT DEFAULT 1
-
-		);
+        CONSTRAINT fk_data FOREIGN KEY (id_data) REFERENCES ag.dim_tempo(id_tempo),
+        CONSTRAINT fk_especie FOREIGN KEY (id_pet_especie) REFERENCES ag.dim_pet(id_pet)
+);
