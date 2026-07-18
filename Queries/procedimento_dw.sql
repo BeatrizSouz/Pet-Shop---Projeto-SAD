@@ -14,8 +14,6 @@ BEGIN
     DELETE FROM DW_Atendimentos.dw.dim_funcionario;
     DELETE FROM dw.dim_tipo_servico;
     
-    DELETE FROM dw.dim_tutor; 
-    DELETE FROM dw.dim_turno; 
     DELETE FROM dw.dim_quadro_clinico;
     DELETE FROM dw.fato_atendimento;
     
@@ -176,10 +174,78 @@ BEGIN
 End
 
 Go
+
+CREATE or Alter Procedure dw.sp_procedimento_dimensoes_tutor_dw
+@data_carga Date
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    IF @data_carga IS NULL
+        THROW 50001, 'A data da carga deve ser informada.', 1;
     
+    DELETE FROM dw.dim_tutor;
+	
+    Update dt
+    Set 
+    	dt.data_fim = @data_carga,
+    	dt.registro_atual = 0
+    From DW_Atendimentos.dw.dim_tutor dt 
+    Inner Join DW_Atendimentos.staging.stg_tutor st on dt.cod_tutor = st.cod_tutor 
+    Where dt.registro_atual = 1
+    	And st.data_carga = @data_carga
+    	and (dt.cod_tutor = st.cod_tutor
+    		or dt.cpf = st.cpf
+    		or dt.cidade = st.cidade
+    		or dt.estado = st.estado
+    		or dt.nome_tutor = st.email
+    		or dt.email = st.email
+    		or dt.telefone = st.telefone);
+   	
+    Insert Into DW_Atendimentos.dw.dim_tutor (cod_tutor, cpf, cidade, estado, nome_tutor, email, telefone, data_inicio, data_fim, registro_atual)
+    Select stg.cod_tutor, stg.cpf, stg.cidade, stg.estado, stg.nome_tutor, stg.email, stg.telefone, @data_carga as data_inicio, Null as data_fim, 1 as registro_atual
+    From DW_Atendimentos.staging.stg_tutor stg
+    Where stg.data_carga = @data_carga
+    	and not Exists (
+    		Select 1 from DW_Atendimentos.dw.dim_tutor dt
+    		where dt.cod_tutor = stg.cod_tutor and dt.registro_atual = 1
+    	);
+End
+
+Go
+    
+CREATE or Alter Procedure dw.sp_procedimento_dimensoes_turno_dw
+@data_carga Date
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    IF @data_carga IS NULL
+        THROW 50001, 'A data da carga deve ser informada.', 1;
+    
+     DELETE FROM dw.dim_turno;
+  		
+    MERGE DW_Atendimentos.dw.dim_turno AS destino
+    USING (
+        SELECT DISTINCT
+            turno
+        FROM DW_Atendimentos.staging.stg_turno
+        WHERE data_carga = @data_carga
+    ) AS origem
+    ON (destino.turno= origem.turno)
+     
+    WHEN NOT MATCHED THEN
+        INSERT (turno)
+        VALUES (origem.turno);
+END;
+Go
+     
+     
 EXEC dw.sp_procedimento_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18'
+EXEC dw.sp_procedimento_dimensoes_tutor_dw '2026-07-18'
+EXEC dw.sp_procedimento_dimensoes_turno_dw '2026-07-18'
 
-Select * from dw.dim_pet
+Select * from dw.dim_turno
