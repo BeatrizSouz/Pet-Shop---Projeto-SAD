@@ -16,7 +16,7 @@
    3. utiliza IDENTITY para gerar id_tempo.
    ============================================================ */
 
-CREATE OR ALTER PROCEDURE dimensao.sp_carregar_dimensao_tempo
+CREATE OR ALTER PROCEDURE dw.sp_carregar_dimensao_tempo
     @data_inicial DATE,
     @data_final DATE
 AS
