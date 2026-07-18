@@ -29,7 +29,10 @@ Granularidade da fato:
 1. CRIA��O DO BANCO DE DADOS
 ============================================================ 
  */
-USE master GO IF NOT EXISTS (
+USE master 
+GO
+
+IF NOT EXISTS (
     SELECT
         name
     FROM
@@ -38,7 +41,10 @@ USE master GO IF NOT EXISTS (
         name = 'DW_Atendimentos'
 ) BEGIN CREATE DATABASE DW_Atendimentos;
 
-END GO USE DW_Atendimentos;
+END
+GO 
+
+USE DW_Atendimentos;
 
 GO
 /* ============================================================
@@ -53,7 +59,9 @@ IF NOT EXISTS (
         name = 'oltp'
 ) EXEC ('CREATE SCHEMA oltp');
 
-GO IF NOT EXISTS (
+GO 
+
+IF NOT EXISTS (
     SELECT
         1
     FROM
@@ -62,7 +70,9 @@ GO IF NOT EXISTS (
         name = 'staging'
 ) EXEC ('CREATE SCHEMA staging');
 
-GO IF NOT EXISTS (
+GO 
+
+IF NOT EXISTS (
     SELECT
         1
     FROM
