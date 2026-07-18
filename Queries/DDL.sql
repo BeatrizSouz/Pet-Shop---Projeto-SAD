@@ -302,7 +302,8 @@ CREATE TABLE
 
 CREATE TABLE
     staging.stg_turno (
-        turno VARCHAR(100) NOT NULL, 
+        turno VARCHAR(100) NOT NULL,
+        cod_turno INT NOT NULL,
         data_carga DATE NOT NULL
     );
 
@@ -544,6 +545,7 @@ Turno:
 CREATE TABLE
     dw.dim_turno (
         id_turno INT IDENTITY (1, 1) PRIMARY KEY,
+        cod_turno INT NOT NULL,
         turno VARCHAR(5) NOT NULL
     );
 
@@ -579,6 +581,7 @@ Etapas:
 CREATE TABLE
     dw.dim_funcao (
         id_funcao INT IDENTITY (1, 1) PRIMARY KEY,
+        cod_funcao INT NOT NULL,
         funcao VARCHAR(100) NOT NULL,
         data_atualizacao DATE NOT NULL,
     );
