@@ -16,7 +16,7 @@
    Dimens�es:
    - dim_tempo: dimens�es est�tica carregadas por intervalos
    - dim_filial:SCD Tipo 2;
-   - dim_servico:SCD Tipo 1;
+   - dim_tipo_servico:SCD Tipo 1;
    - dim_funcionario:SCD Tipo 2;
    - dim_tutor:SCD Tipo 2;
    - dim_pet:SCD Tipo 2;
@@ -72,7 +72,7 @@ DROP PROCEDURE IF EXISTS dw.sp_carregar_fato_atendimento;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_quadro_clinico;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_tempo;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_filial;
-DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_servico;
+DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_tipo_servico;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_funcionario;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_tutor;
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_pet;
@@ -117,17 +117,6 @@ GO
    4. AMBIENTE OPERACIONAL - OLTP
    ============================================================ */
 
-/* Tabela isolada de Endereços para evitar redundância */
-
-CREATE TABLE oltp.endereco (
-    cod_endereco INT IDENTITY(1,1) PRIMARY KEY,
-    cep VARCHAR(8) NOT NULL,
-    estado CHAR(2) NOT NULL,
-    cidade VARCHAR(100) NOT NULL,
-    rua VARCHAR(100) NOT NULL,
-    numero INT NOT NULL,
-    complemento VARCHAR(100) NULL
-);
 
 /* Tipos de servi�o oferecidos. */
 
@@ -137,27 +126,40 @@ CREATE TABLE oltp.tipo_servico (
     valor_servico DECIMAL(10,2) DEFAULT 0.00
 );
 
+/* Endere�os*/
+CREATE TABLE oltp.endereco(
+    cod_endereco INT IDENTITY(1,1) PRIMARY KEY,
+    cep VARCHAR(8) NOT NULL,
+    estado VARCHAR(100) NOT NULL,
+    cidade VARCHAR(100) NOT NULL,
+    rua VARCHAR(100) NOT NULL,
+    numero INT NOT NULL,
+    complemento VARCHAR(100)
+    
+);
 /* Filiais da Rede. */
 
 CREATE TABLE oltp.filial (
     cod_filial INT IDENTITY(1,1) PRIMARY KEY,
-    nome_filial VARCHAR(100) NOT NULL,
     cod_endereco INT NOT NULL,
-    CONSTRAINT fk_filial_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
+    nome_filial VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
 );
+
+select * from oltp.filial
 
 /* Funcion�rios da Rede*/
 
 CREATE TABLE oltp.funcionario (
     cod_funcionario INT IDENTITY(1,1) PRIMARY KEY,
+    cod_endereco INT,
     matricula INT NOT NULL,
     nome_funcionario VARCHAR(100) NOT NULL,
     CRMV VARCHAR(100) NULL,
-    cod_endereco INT NOT NULL,
-    CONSTRAINT fk_funcionario_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
+    CONSTRAINT fk_endereco_funcionario FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
 );
 
-/* Funções de cada funcionário*/
+/* Func�es de cada funcin�rio*/
 CREATE TABLE oltp.funcao (
     cod_funcao INT IDENTITY(1,1) PRIMARY KEY,
     cod_funcionario INT NOT NULL,
@@ -170,11 +172,11 @@ CREATE TABLE oltp.funcao (
 CREATE TABLE oltp.tutor(
     cod_tutor INT IDENTITY(1,1) PRIMARY KEY,
     cpf VARCHAR(11) NOT NULL,
+    cod_endereco INT NOT NULL,
     nome_tutor VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
     telefone VARCHAR(100) NOT NULL,
-    cod_endereco INT NOT NULL,
-    CONSTRAINT fk_tutor_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
+    CONSTRAINT fk_endereco_tutor FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
 );
 
 /* Os animais de cada tutor*/
@@ -286,7 +288,7 @@ INSERT INTO oltp.atendimento (cod_tipo_servico, cod_filial, cod_funcionario, cod
 (1, 1, 1, 1, 1, 1, '2026-07-16 08:00:00', '2026-07-16 09:00:00', 'Baixa'),
 (2, 2, 2, 2, 2, 2, '2026-07-16 09:00:00', '2026-07-16 10:00:00', 'Alta'),
 (5, 3, 3, 3, 3, 3, '2026-07-16 10:00:00', '2026-07-16 12:00:00', 'Alta'),
-(3, 4, 5, 4, 4, 4, '2026-07-16 14:00:00', '2026-07-16 14:30:00', 'Média'),
+(3, 4, 5, 4, 4, 4, '2026-07-16 14:00:00', '2026-07-16 14:30:00', 'M�dia'),
 (1, 5, 1, 5, 5, 5, '2026-07-16 15:00:00', '2026-07-16 16:00:00', 'Baixa');
 GO
 
@@ -319,19 +321,23 @@ SELECT * FROM oltp.atendimento
 
    CREATE TABLE staging.stg_filial (
         cod_filial INT NOT NULL,
-        cod_endereco INT NOT NULL,
+        cidade VARCHAR (100) NOT NULL,
+        estado VARCHAR (100) NOT NULL,
         nome_filial VARCHAR(100) NOT NULL,
         data_carga DATE NOT NULL
    );
 
    CREATE TABLE staging.stg_funcionario (
         cod_funcionario INT NOT NULL,
-        cod_endereco INT,
+        cidade VARCHAR (100) NOT NULL,
+        estado VARCHAR (100) NOT NULL,
         matricula INT NOT NULL,
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
         data_carga DATE NOT NULL
     );
+
+  
 
     CREATE TABLE staging.stg_funcao (
     cod_funcao INT NOT NULL,
@@ -344,7 +350,8 @@ SELECT * FROM oltp.atendimento
    CREATE TABLE staging.stg_tutor(
      cod_tutor INT NOT NULL,
      cpf VARCHAR(11) NOT NULL,
-     cod_endereco INT NOT NULL,
+     cidade VARCHAR (100) NOT NULL,
+     estado VARCHAR (100) NOT NULL,
      nome_tutor VARCHAR(100) NOT NULL,
      email VARCHAR(100) NOT NULL,
      telefone VARCHAR(100) NOT NULL,
@@ -369,6 +376,8 @@ SELECT * FROM oltp.atendimento
     situacao_final VARCHAR(500),
     data_carga DATE NOT NULL 
 );
+
+
 
 CREATE TABLE staging.stg_atendimento (
     cod_atendimento INT NOT NULL,
@@ -417,7 +426,8 @@ GO
         matricula INT NOT NULL,
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
-        cidade VARCHAR(100) NOT NULL,
+        cidade VARCHAR (100) NOT NULL,
+        estado VARCHAR (100) NOT NULL,
         data_inicio DATE NOT NULL,
         data_fim DATE NULL,
         registro_atual BIT NOT NULL
@@ -427,11 +437,11 @@ GO
      id_tutor INT IDENTITY(1,1) PRIMARY KEY,
      cod_tutor INT NOT NULL,
      cpf VARCHAR(11) NOT NULL,
-     cod_endereco INT NOT NULL,
+     cidade VARCHAR (100) NOT NULL,
+     estado VARCHAR (100) NOT NULL,
      nome_tutor VARCHAR(100) NOT NULL,
      email VARCHAR(100) NOT NULL,
      telefone VARCHAR(100) NOT NULL,
-     cidade VARCHAR(100) NOT NULL,
      data_inicio DATE NOT NULL,
      data_fim DATE NULL,
      registro_atual BIT NOT NULL
@@ -479,7 +489,7 @@ CREATE TABLE dw.dim_tempo (
        cod_tipo_servico INT NOT NULL,
        nome_tipo_servico VARCHAR(100) NOT NULL,
        data_atualizacao DATE NOT NULL,
-       CONSTRAINT uq_dim_servico_cod_tipo_servico UNIQUE (cod_tipo_servico)
+       CONSTRAINT uq_dim_tipo_servico_cod_tipo_servico UNIQUE (cod_tipo_servico)
    );
 
    
@@ -498,7 +508,8 @@ CREATE TABLE dw.dim_tempo (
   CREATE TABLE dw.dim_filial (
         id_filial INT IDENTITY(1,1) PRIMARY KEY,
         cod_filial INT NOT NULL,
-        cod_endereco INT NOT NULL,
+        cidade VARCHAR (100) NOT NULL,
+        estado VARCHAR (100) NOT NULL,
         nome_filial VARCHAR(100) NOT NULL,
         data_inicio DATE NOT NULL,
         data_fim DATE NULL,
@@ -519,7 +530,7 @@ CREATE TABLE dw.dim_tempo (
     cod_pet INT NOT NULL,
     nome VARCHAR(100) NOT NULL,
     especie VARCHAR(100) NOT NULL,
-    raça VARCHAR(100) NULL,
+    raca VARCHAR(100) NULL,
     porte VARCHAR(100) NOT NULL,
     sexo CHAR(1) NOT NULL
     CHECK (Sexo IN ('F', 'M', 'f', 'm')),
@@ -598,7 +609,6 @@ CREATE TABLE dw.dim_tempo (
    - id_tempo_abertura;
    - id_tempo_fechamento.
    ============================================================ */
-
    CREATE TABLE dw.fato_atendimento (
     id_atendimento BIGINT IDENTITY(1,1) PRIMARY KEY,
     cod_atendimento INT NOT NULL,
@@ -607,12 +617,12 @@ CREATE TABLE dw.dim_tempo (
     id_funcionario INT NOT NULL,
     id_tutor INT NOT NULL,
     id_pet INT NOT NULL,
-    id_quadro_clinico INT NOT NULL,
     id_turno INT NOT NULL,
+    id_quadro_clinico INT NOT NULL,
     id_funcao_principal INT NOT NULL,
     id_funcao_secundaria INT NULL,
     id_tempo_inicio INT NOT NULL,
-    id_tempo_fim INT NOT NULL,
+    id_tempo_fim INT NULL,
     quantidade INT DEFAULT 1,
     valor_atendimento DECIMAL(10,2) DEFAULT 0.00,
     data_carga DATE NOT NULL,
@@ -623,15 +633,11 @@ CREATE TABLE dw.dim_tempo (
     CONSTRAINT fk_atendimento_funcionario FOREIGN KEY (id_funcionario) REFERENCES dw.dim_funcionario(id_funcionario),
     CONSTRAINT fk_atendimento_tutor FOREIGN KEY (id_tutor) REFERENCES dw.dim_tutor(id_tutor),
     CONSTRAINT fk_atendimento_pet FOREIGN KEY (id_pet) REFERENCES dw.dim_pet(id_pet),
-    CONSTRAINT fk_atendimento_quadro_clinico FOREIGN KEY (id_quadro_clinico) REFERENCES dw.dim_quadro_clinico(id_quadro_clinico),
     CONSTRAINT fk_atendimento_turno FOREIGN KEY (id_turno) REFERENCES dw.dim_turno(id_turno),
+    CONSTRAINT fk_atendimento_quadro_clinico FOREIGN KEY (id_quadro_clinico) REFERENCES dw.dim_quadro_clinico(id_quadro_clinico),
     CONSTRAINT fk_atendimento_funcao_principal FOREIGN KEY (id_funcao_principal) REFERENCES dw.dim_funcao(id_funcao),
     CONSTRAINT fk_atendimento_funcao_secundaria FOREIGN KEY (id_funcao_secundaria) REFERENCES dw.dim_funcao(id_funcao),
     CONSTRAINT fk_atendimento_tempo_inicio FOREIGN KEY (id_tempo_inicio) REFERENCES dw.dim_tempo(id_tempo),
     CONSTRAINT fk_atendimento_tempo_fim FOREIGN KEY (id_tempo_fim) REFERENCES dw.dim_tempo(id_tempo)
 );
-
-
-
-
-
+GO
