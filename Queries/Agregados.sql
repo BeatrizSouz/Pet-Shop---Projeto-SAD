@@ -1,7 +1,3 @@
-/*
-Agregado de distribuição de pets por Espécie
-
-*/
 CREATE OR ALTER PROCEDURE ag.sp_carregar_dimensao_tempo
 AS
 BEGIN 
