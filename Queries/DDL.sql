@@ -150,13 +150,13 @@ DROP TABLE IF EXISTS oltp.atendimento;
 
 DROP TABLE IF EXISTS oltp.quadro_clinico;
 
-DROP TABLE IF EXISTS oltp.funcao;
-
 DROP TABLE IF EXISTS oltp.pet;
 
 DROP TABLE IF EXISTS oltp.tutor;
 
 DROP TABLE IF EXISTS oltp.funcionario;
+
+DROP TABLE IF EXISTS oltp.funcao;
 
 DROP TABLE IF EXISTS oltp.filial;
 
@@ -197,28 +197,24 @@ CREATE TABLE
         CONSTRAINT fk_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco (cod_endereco)
     );
 
-select
-    *
-from
-    oltp.filial
+/* Func�es de cada funcin�rio*/
+CREATE TABLE
+    oltp.funcao (
+        cod_funcao INT IDENTITY (1, 1) PRIMARY KEY,
+        funcao VARCHAR(100) NOT NULL,
+    );
+
     /* Funcion�rios da Rede*/
 CREATE TABLE
     oltp.funcionario (
         cod_funcionario INT IDENTITY (1, 1) PRIMARY KEY,
         cod_endereco INT,
+        cod_funcao INT,
         matricula INT NOT NULL,
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
-        CONSTRAINT fk_endereco_funcionario FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco (cod_endereco)
-    );
-
-/* Func�es de cada funcin�rio*/
-CREATE TABLE
-    oltp.funcao (
-        cod_funcao INT IDENTITY (1, 1) PRIMARY KEY,
-        cod_funcionario INT NOT NULL,
-        funcao VARCHAR(100) NOT NULL,
-        CONSTRAINT fk_funcao_funcionario FOREIGN KEY (cod_funcionario) REFERENCES oltp.funcionario (cod_funcionario)
+        CONSTRAINT fk_endereco_funcionario FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco (cod_endereco),
+        CONSTRAINT fk_funca_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao)
     );
 
 /* Os clientes */
@@ -315,7 +311,6 @@ CREATE TABLE
 CREATE TABLE
     staging.stg_funcao (
         cod_funcao INT NOT NULL,
-        cod_funcionario INT NOT NULL,
         funcao VARCHAR(100) NOT NULL,
         data_carga DATE NOT NULL
     );
@@ -564,6 +559,7 @@ Etapas:
 CREATE TABLE
     dw.dim_funcao (
         id_funcao INT IDENTITY (1, 1) PRIMARY KEY,
+        cod_funcao INT NOT NULL,
         funcao VARCHAR(100) NOT NULL,
         data_atualizacao DATE NOT NULL,
     );

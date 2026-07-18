@@ -41,14 +41,14 @@ BEGIN
     INNER JOIN oltp.endereco e
     ON f.cod_endereco = e.cod_endereco;
 
-    INSERT INTO staging.stg_funcionario (cod_funcionario, cidade, estado,matricula, nome_funcionario, CRMV, data_carga)
+    INSERT INTO staging.stg_funcionario (cod_funcionario, cidade, estado, matricula, nome_funcionario, CRMV, data_carga)
     SELECT f.cod_funcionario, e.cidade, e.estado, f.matricula, f.nome_funcionario, f.CRMV,  @data_carga
     FROM oltp.funcionario f
     INNER JOIN oltp.endereco e
     ON f.cod_endereco = e.cod_endereco;
 
-    INSERT INTO staging.stg_funcao (cod_funcao, cod_funcionario, funcao, data_carga)
-    SELECT cod_funcao, cod_funcionario, funcao, @data_carga
+    INSERT INTO staging.stg_funcao (cod_funcao, funcao, data_carga)
+    SELECT cod_funcao, funcao, @data_carga
     FROM oltp.funcao;
 
     Insert into staging.stg_tutor (cod_tutor, cpf, cidade,estado, nome_tutor, email, telefone, data_carga)
@@ -75,4 +75,4 @@ GO
 
 Exec staging.sp_carregar_staging '2026-07-18'
 
-SELECT * from staging.stg_filial
+SELECT * from staging.stg_funcionario

@@ -84,11 +84,11 @@ BEGIN
     
     Merge dw.dim_funcao as destino
     Using (
-    	Select Distinct funcao
+    	Select cod_funcao, funcao
     	From staging.stg_funcao
     	Where data_carga = @data_carga
     ) As origem
-    ON(destino.funcao = origem.funcao)
+    ON(destino.cod_funcao = origem.cod_funcao)
     
     When Matched and destino.funcao <> origem.funcao Then
     	Update set
@@ -96,8 +96,8 @@ BEGIN
     		destino.data_atualizacao = @data_carga
     
 	When Not Matched Then
-		Insert (funcao, data_atualizacao)
-		Values (origem.funcao, @data_carga);
+		Insert (cod_funcao, funcao, data_atualizacao)
+		Values (origem.cod_funcao, origem.funcao, @data_carga);
 END
 
 Go
@@ -141,4 +141,4 @@ EXEC dw.sp_procedimento_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18'
 EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18'
 
-Select * from dw.dim_tipo_servico
+Select * from dw.dim_filial

@@ -29,17 +29,17 @@ INSERT INTO oltp.tipo_servico (nome_tipo_servico,valor_servico) VALUES
 INSERT INTO oltp.filial (cod_endereco, nome_filial) VALUES 
 (1, 'Filial Centro'), (2, 'Filial Sul'), (3, 'Filial Norte'), (4, 'Filial Leste'), (5, 'Filial Jardins');
 
--- 4. Funcion�rios
-INSERT INTO oltp.funcionario (cod_endereco, matricula, nome_funcionario, CRMV) VALUES 
-(1, 101, 'Ana Paula', NULL),
-(2, 102, 'Ricardo Silva', 'CRM-SE 111'),
-(3, 103, 'Fernanda Lima', 'CRM-SE 222'),
-(4, 104, 'Marcos Oliveira', NULL),
-(5, 105, 'Patrícia Rocha', 'CRM-SE 333');
+-- 4. Fun��es
+INSERT INTO oltp.funcao (funcao) VALUES 
+('Atendente'), ('Veterinário'), ('Auxiliar');
 
--- 5. Fun��es
-INSERT INTO oltp.funcao (cod_funcionario, funcao) VALUES 
-(1, 'Atendente'), (2, 'Veterinário'), (3, 'Veterinário'), (4, 'Auxiliar'), (5, 'Veterinário');
+-- 5. Funcion�rios
+INSERT INTO oltp.funcionario (cod_endereco, cod_funcao, matricula, nome_funcionario, CRMV) VALUES 
+(1, 1, 101, 'Ana Paula', NULL),
+(2, 2, 102, 'Ricardo Silva', 'CRM-SE 111'),
+(3, 3, 103, 'Fernanda Lima', 'CRM-SE 222'),
+(4, 2, 104, 'Marcos Oliveira', NULL),
+(5, 1, 105, 'Patrícia Rocha', 'CRM-SE 333');
 
 -- 6. Tutores
 INSERT INTO oltp.tutor (cpf, cod_endereco, nome_tutor, email, telefone) VALUES 
