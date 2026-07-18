@@ -1,20 +1,20 @@
    /* ============================================================
-   DEMONSTRAÇÃO DE UM AMBIENTE DE DATA WAREHOUSE
+   DEMONSTRAï¿½ï¿½O DE UM AMBIENTE DE DATA WAREHOUSE
    
-   Cenário: Gestão de Atendimentos de Redes de Petshop
+   Cenï¿½rio: Gestï¿½o de Atendimentos de Redes de Petshop
 
    Camadas:
    - OLTP: ambiente operacional;
-   - STAGING: área intermediária;
+   - STAGING: ï¿½rea intermediï¿½ria;
    - DW: ambiente dimensional.
 
-   Convenções:
+   Convenï¿½ï¿½es:
    - cod_: chave operacional ou chave natural;
    - id_: chave substituta, surrogate key;
-   - data_carga: data de execução do processo ETL.
+   - data_carga: data de execuï¿½ï¿½o do processo ETL.
 
-   Dimensões:
-   - dim_tempo: dimensões estática carregadas por intervalos
+   Dimensï¿½es:
+   - dim_tempo: dimensï¿½es estï¿½tica carregadas por intervalos
    - dim_filial:SCD Tipo 2;
    - dim_servico:SCD Tipo 1;
    - dim_funcionario:SCD Tipo 2;
@@ -28,7 +28,7 @@
 
 
 /* ============================================================
-   1. CRIAÇÃO DO BANCO DE DADOS
+   1. CRIAï¿½ï¿½O DO BANCO DE DADOS
    ============================================================ 
    */
 
@@ -45,7 +45,7 @@
    GO
 
     /* ============================================================
-   2. CRIAÇÃO DOS SCHEMAS
+   2. CRIAï¿½ï¿½O DOS SCHEMAS
    ============================================================ */
 
 IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'oltp')
@@ -61,10 +61,10 @@ IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'dw')
 GO
 
 /* ============================================================
-   3. REMOÇÃO DOS OBJETOS ANTERIORES
+   3. REMOï¿½ï¿½O DOS OBJETOS ANTERIORES
 
    Essa etapa permite executar novamente todo o script.
-   Os procedimentos são removidos antes das tabelas.
+   Os procedimentos sï¿½o removidos antes das tabelas.
    ============================================================ */
 
 DROP PROCEDURE IF EXISTS dw.sp_executar_etl;
@@ -117,8 +117,19 @@ GO
    4. AMBIENTE OPERACIONAL - OLTP
    ============================================================ */
 
+/* Tabela isolada de EndereÃ§os para evitar redundÃ¢ncia */
 
-/* Tipos de serviço oferecidos. */
+CREATE TABLE oltp.endereco (
+    cod_endereco INT IDENTITY(1,1) PRIMARY KEY,
+    cep VARCHAR(8) NOT NULL,
+    estado CHAR(2) NOT NULL,
+    cidade VARCHAR(100) NOT NULL,
+    rua VARCHAR(100) NOT NULL,
+    numero INT NOT NULL,
+    complemento VARCHAR(100) NULL
+);
+
+/* Tipos de serviï¿½o oferecidos. */
 
 CREATE TABLE oltp.tipo_servico (
     cod_tipo_servico INT IDENTITY(1,1) PRIMARY KEY,
@@ -126,40 +137,27 @@ CREATE TABLE oltp.tipo_servico (
     valor_servico DECIMAL(10,2) DEFAULT 0.00
 );
 
-
-
-/* Endereços*/
-CREATE TABLE oltp.endereco(
-    cod_endereco INT IDENTITY(1,1) PRIMARY KEY,
-    cep VARCHAR(8) NOT NULL,
-    estado VARCHAR(100) NOT NULL,
-    cidade VARCHAR(100) NOT NULL,
-    rua VARCHAR(100) NOT NULL,
-    numero INT NOT NULL,
-    complemento VARCHAR(100)
-    
-);
 /* Filiais da Rede. */
 
 CREATE TABLE oltp.filial (
     cod_filial INT IDENTITY(1,1) PRIMARY KEY,
-    cod_endereco INT NOT NULL,
     nome_filial VARCHAR(100) NOT NULL,
-    CONSTRAINT fk_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
+    cod_endereco INT NOT NULL,
+    CONSTRAINT fk_filial_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
 );
 
-/* Funcionários da Rede*/
+/* Funcionï¿½rios da Rede*/
 
 CREATE TABLE oltp.funcionario (
     cod_funcionario INT IDENTITY(1,1) PRIMARY KEY,
-    cod_endereco INT,
     matricula INT NOT NULL,
     nome_funcionario VARCHAR(100) NOT NULL,
-    CRMV VARCHAR(100) NULL
-    CONSTRAINT fk_endereco_funcionario FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
+    CRMV VARCHAR(100) NULL,
+    cod_endereco INT NOT NULL,
+    CONSTRAINT fk_funcionario_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
 );
 
-/* Funcões de cada funcinário*/
+/* FunÃ§Ãµes de cada funcionÃ¡rio*/
 CREATE TABLE oltp.funcao (
     cod_funcao INT IDENTITY(1,1) PRIMARY KEY,
     cod_funcionario INT NOT NULL,
@@ -172,11 +170,11 @@ CREATE TABLE oltp.funcao (
 CREATE TABLE oltp.tutor(
     cod_tutor INT IDENTITY(1,1) PRIMARY KEY,
     cpf VARCHAR(11) NOT NULL,
-    cod_endereco INT NOT NULL,
     nome_tutor VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
     telefone VARCHAR(100) NOT NULL,
-    CONSTRAINT fk_endereco_tutor FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
+    cod_endereco INT NOT NULL,
+    CONSTRAINT fk_tutor_endereco FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco(cod_endereco)
 );
 
 /* Os animais de cada tutor*/
@@ -185,13 +183,14 @@ CREATE TABLE oltp.pet(
     cod_tutor INT NOT NULL,
     nome VARCHAR(100) NOT NULL,
     especie VARCHAR(100) NOT NULL,
+    raca VARCHAR(100) NULL,
     porte VARCHAR(100) NOT NULL,
     sexo CHAR(1) NOT NULL 
     CHECK (Sexo IN ('F', 'M', 'f', 'm')),
     CONSTRAINT fk_pet_tutor FOREIGN KEY (cod_tutor) REFERENCES oltp.tutor(cod_tutor)
 );
 
-/* Descrição da situação inicial*/
+/* Descriï¿½ï¿½o da situaï¿½ï¿½o inicial*/
 CREATE TABLE oltp.quadro_clinico(
     cod_quadro_clinico INT IDENTITY(1,1) PRIMARY KEY,
     situacao_inicial VARCHAR(500) NOT NULL, 
@@ -226,37 +225,37 @@ SELECT * FROM oltp.quadro_clinico
    5. DADOS INICIAIS DO AMBIENTE OPERACIONAL (5 REGISTROS)
    ============================================================ */
 
--- 1. Endereços
+-- 1. Endereï¿½os
 INSERT INTO oltp.endereco (cep, estado, cidade, rua, numero, complemento) VALUES 
 ('49001000', 'SE', 'Aracaju', 'Av. Hermes Fontes', 100, 'Apto 101'),
 ('49001001', 'SE', 'Aracaju', 'Rua Bahia', 205, NULL),
 ('49001002', 'SE', 'Aracaju', 'Av. Ivo do Prado', 50, 'Loja B'),
-('49001003', 'SE', 'Aracaju', 'Rua Itabaiana', 800, 'Edifício Comercial'),
+('49001003', 'SE', 'Aracaju', 'Rua Itabaiana', 800, 'Edifï¿½cio Comercial'),
 ('49001004', 'SE', 'Aracaju', 'Av. Augusto Franco', 120, 'Casa');
 
--- 2. Tipos de Serviço
+-- 2. Tipos de Serviï¿½o
 
 INSERT INTO oltp.tipo_servico (nome_tipo_servico,valor_servico) VALUES 
 ('Banho e Tosa',90.00),
-('Consulta Veterinária',60.00),
-('Vacinação',40.00),
-('Aplicação de Medicamento',50.00),
+('Consulta Veterinï¿½ria',60.00),
+('Vacinaï¿½ï¿½o',40.00),
+('Aplicaï¿½ï¿½o de Medicamento',50.00),
 ('Cirurgia',30.00);
 -- 3. Filiais
 INSERT INTO oltp.filial (cod_endereco, nome_filial) VALUES 
 (1, 'Filial Centro'), (2, 'Filial Sul'), (3, 'Filial Norte'), (4, 'Filial Leste'), (5, 'Filial Jardins');
 
--- 4. Funcionários
+-- 4. Funcionï¿½rios
 INSERT INTO oltp.funcionario (cod_endereco, matricula, nome_funcionario, CRMV) VALUES 
 (1, 101, 'Ana Paula', NULL),
 (2, 102, 'Ricardo Silva', 'CRM-SE 111'),
 (3, 103, 'Fernanda Lima', 'CRM-SE 222'),
 (4, 104, 'Marcos Oliveira', NULL),
-(5, 105, 'Patrícia Rocha', 'CRM-SE 333');
+(5, 105, 'Patrï¿½cia Rocha', 'CRM-SE 333');
 
--- 5. Funções
+-- 5. Funï¿½ï¿½es
 INSERT INTO oltp.funcao (cod_funcionario, funcao) VALUES 
-(1, 'Atendente'), (2, 'Veterinário'), (3, 'Veterinário'), (4, 'Auxiliar'), (5, 'Veterinário');
+(1, 'Atendente'), (2, 'Veterinï¿½rio'), (3, 'Veterinï¿½rio'), (4, 'Auxiliar'), (5, 'Veterinï¿½rio');
 
 -- 6. Tutores
 INSERT INTO oltp.tutor (cpf, cod_endereco, nome_tutor, email, telefone) VALUES 
@@ -267,27 +266,27 @@ INSERT INTO oltp.tutor (cpf, cod_endereco, nome_tutor, email, telefone) VALUES
 ('55555555555', 5, 'Bianca', 't5@email.com', '79999990005');
 
 -- 7. Pets
-INSERT INTO oltp.pet (cod_tutor, nome, especie, porte, sexo) VALUES 
-(1, 'Rex', 'Cachorro', 'Grande', 'M'),
-(2, 'Luna', 'Gato', 'Pequeno', 'F'),
-(3, 'Thor', 'Cachorro', 'Médio', 'M'),
-(4, 'Mia', 'Gato', 'Pequeno', 'F'),
-(5, 'Bob', 'Cachorro', 'Pequeno', 'M');
+INSERT INTO oltp.pet (cod_tutor, nome, especie, raca, porte, sexo) VALUES 
+(1, 'Rex', 'Cachorro', 'Vira-lata', 'Grande', 'M'),
+(2, 'Luna', 'Gato', 'SiamÃªs', 'Pequeno', 'F'),
+(3, 'Thor', 'Cachorro', 'Pitbull', 'MÃ©dio', 'M'),
+(4, 'Mia', 'Gato', 'Persa', 'Pequeno', 'F'),
+(5, 'Bob', 'Cachorro', 'Poodle', 'Pequeno', 'M');
 
--- 8. Quadros Clínicos
+-- 8. Quadros Clï¿½nicos
 INSERT INTO oltp.quadro_clinico (situacao_inicial, situacao_final) VALUES 
 ('Checkup anual', 'Vacinas em dia'),
-('Vômitos constantes', 'Intolerância alimentar'),
+('Vï¿½mitos constantes', 'Intolerï¿½ncia alimentar'),
 ('Ferimento na pata', 'Curativo realizado'),
 ('Apatia', 'Vitaminas prescritas'),
-('Limpeza de ouvidos', 'Procedimento concluído');
+('Limpeza de ouvidos', 'Procedimento concluï¿½do');
 
 -- 9. Atendimentos
 INSERT INTO oltp.atendimento (cod_tipo_servico, cod_filial, cod_funcionario, cod_tutor, cod_pet, cod_quadro_clinico, data_inicio, data_fim, prioridade) VALUES 
 (1, 1, 1, 1, 1, 1, '2026-07-16 08:00:00', '2026-07-16 09:00:00', 'Baixa'),
 (2, 2, 2, 2, 2, 2, '2026-07-16 09:00:00', '2026-07-16 10:00:00', 'Alta'),
 (5, 3, 3, 3, 3, 3, '2026-07-16 10:00:00', '2026-07-16 12:00:00', 'Alta'),
-(3, 4, 5, 4, 4, 4, '2026-07-16 14:00:00', '2026-07-16 14:30:00', 'Média'),
+(3, 4, 5, 4, 4, 4, '2026-07-16 14:00:00', '2026-07-16 14:30:00', 'MÃ©dia'),
 (1, 5, 1, 5, 5, 5, '2026-07-16 15:00:00', '2026-07-16 16:00:00', 'Baixa');
 GO
 
@@ -302,14 +301,14 @@ SELECT * FROM oltp.pet
 SELECT * FROM oltp.atendimento
 
 /* ============================================================
-   6. ÁREA DE STAGING
+   6. ï¿½REA DE STAGING
 
    A staging armazena uma fotografia dos dados operacionais
    para cada data de carga.
 
    Ao reprocessar uma data:
-   - somente os registros daquela data são removidos;
-   - as demais cargas são preservadas.
+   - somente os registros daquela data sï¿½o removidos;
+   - as demais cargas sï¿½o preservadas.
    ============================================================ */
 
    CREATE TABLE staging.stg_tipo_servico (
@@ -357,6 +356,7 @@ SELECT * FROM oltp.atendimento
     cod_tutor INT NOT NULL,
     nome VARCHAR(100) NOT NULL,
     especie VARCHAR(100) NOT NULL,
+    raca VARCHAR(100) NULL,
     porte VARCHAR(100) NOT NULL,
     sexo CHAR(1) NOT NULL,
     data_carga DATE NOT NULL   
@@ -365,7 +365,6 @@ SELECT * FROM oltp.atendimento
 
  CREATE TABLE staging.stg_quadro_clinico(
     cod_quadro_clinico INT NOT NULL,
-    cod_pet INT NOT NULL,
     situacao_inicial VARCHAR(500) NOT NULL, 
     situacao_final VARCHAR(500),
     data_carga DATE NOT NULL 
@@ -387,7 +386,7 @@ CREATE TABLE staging.stg_atendimento (
 );
 GO
 
-/* Índices para facilitar a localização dos dados de uma carga. */
+/* ï¿½ndices para facilitar a localizaï¿½ï¿½o dos dados de uma carga. */
 
 CREATE INDEX ix_stg_atendimento_data_carga ON  staging.stg_atendimento(data_carga);
 CREATE INDEX ix_stg_quadro_clinico_data_carga ON staging.stg_quadro_clinico(data_carga);
@@ -403,14 +402,14 @@ GO
    ============================================================ */
 
    /* ============================================================
-   7.1 DIMENSÃO FUNCIONÁRIO e DIMENSÃO TUTOR 
+   7.1 DIMENSï¿½O FUNCIONï¿½RIO e DIMENSï¿½O TUTOR 
 
-   Estratégia SCD Tipo 2.
+   Estratï¿½gia SCD Tipo 2.
 
-   Quando um atributo histórico for alterado:
-   - a versão atual será encerrada;
-   - uma nova versão será criada;
-   - o histórico será preservado.
+   Quando um atributo histï¿½rico for alterado:
+   - a versï¿½o atual serï¿½ encerrada;
+   - uma nova versï¿½o serï¿½ criada;
+   - o histï¿½rico serï¿½ preservado.
    ============================================================ */
    CREATE TABLE dw.dim_funcionario (
         id_funcionario INT IDENTITY(1,1) PRIMARY KEY,
@@ -440,16 +439,16 @@ GO
 
 
    /* ============================================================
-   7.3 DIMENSÃO TEMPO
+   7.3 DIMENSï¿½O TEMPO
 
-   A dimensão tempo é carregada separadamente.
+   A dimensï¿½o tempo ï¿½ carregada separadamente.
 
    id_tempo:
    - chave substituta;
    - valor gerado automaticamente por IDENTITY.
 
    data_completa:
-   - representa a chave natural da dimensão.
+   - representa a chave natural da dimensï¿½o.
    ============================================================ */
 
 CREATE TABLE dw.dim_tempo (
@@ -466,9 +465,9 @@ CREATE TABLE dw.dim_tempo (
 );
 
 /* ============================================================
-   7.4 DIMENSÃO SERVIÇO
+   7.4 DIMENSï¿½O SERVIï¿½O
 
-   Implementação da estratégia SCD Tipo 1.
+   Implementaï¿½ï¿½o da estratï¿½gia SCD Tipo 1.
 
    Etapas:
    1. atualiza os registros existentes;
@@ -486,14 +485,14 @@ CREATE TABLE dw.dim_tempo (
    
 
  /* ============================================================
-   7.5 DIMENSÃO FILIAL
+   7.5 DIMENSï¿½O FILIAL
 
-    Estratégia SCD Tipo 2.
+    Estratï¿½gia SCD Tipo 2.
 
-   Quando um atributo histórico for alterado:
-   - a versão atual será encerrada;
-   - uma nova versão será criada;
-   - o histórico será preservado.
+   Quando um atributo histï¿½rico for alterado:
+   - a versï¿½o atual serï¿½ encerrada;
+   - uma nova versï¿½o serï¿½ criada;
+   - o histï¿½rico serï¿½ preservado.
  ============================================================ */
 
   CREATE TABLE dw.dim_filial (
@@ -507,9 +506,9 @@ CREATE TABLE dw.dim_tempo (
    );
 
    /* ============================================================
-   7.6 DIMENSÃO PET
+   7.6 DIMENSï¿½O PET
 
-   Implementação da estratégia SCD Tipo 2.
+   Implementaï¿½ï¿½o da estratï¿½gia SCD Tipo 2.
 
    Etapas:
    1. atualiza os registros existentes;
@@ -520,6 +519,7 @@ CREATE TABLE dw.dim_tempo (
     cod_pet INT NOT NULL,
     nome VARCHAR(100) NOT NULL,
     especie VARCHAR(100) NOT NULL,
+    raÃ§a VARCHAR(100) NULL,
     porte VARCHAR(100) NOT NULL,
     sexo CHAR(1) NOT NULL
     CHECK (Sexo IN ('F', 'M', 'f', 'm')),
@@ -531,12 +531,12 @@ CREATE TABLE dw.dim_tempo (
 
 
 /* ============================================================
-   7.7 DIMENSÃO TURNO
+   7.7 DIMENSï¿½O TURNO
    
-   A dimensão tempo é carregada separadamente.
+   A dimensï¿½o tempo ï¿½ carregada separadamente.
    
    Turno:
-   - Manhã
+   - Manhï¿½
    - Tarde
    - Noite
    ============================================================ */
@@ -545,9 +545,9 @@ CREATE TABLE dw.dim_tempo (
     turno VARCHAR(5) NOT NULL
   );
   /* ============================================================
-   7.8 DIMENSÃO QUADRO CLINICO
+   7.8 DIMENSï¿½O QUADRO CLINICO
    
-   Implementação da estratégia SCD Tipo 2.
+   Implementaï¿½ï¿½o da estratï¿½gia SCD Tipo 2.
 
    Etapas:
    1. atualiza os registros existentes;
@@ -563,9 +563,9 @@ CREATE TABLE dw.dim_tempo (
     registro_atual BIT NOT NULL
   );
 /* ============================================================
-   7.9 DIMENSÃO FUNÇÃO
+   7.9 DIMENSï¿½O FUNï¿½ï¿½O
    
-   Implementação da estratégia SCD Tipo 1.
+   Implementaï¿½ï¿½o da estratï¿½gia SCD Tipo 1.
 
    Etapas:
    1. atualiza os registros existentes;
@@ -594,10 +594,11 @@ CREATE TABLE dw.dim_tempo (
    - quantidade;
    - tempo_resolucao_horas.
 
-   Dimensão tempo:
+   Dimensï¿½o tempo:
    - id_tempo_abertura;
    - id_tempo_fechamento.
    ============================================================ */
+
    CREATE TABLE dw.fato_atendimento (
     id_atendimento BIGINT IDENTITY(1,1) PRIMARY KEY,
     cod_atendimento INT NOT NULL,
@@ -607,11 +608,13 @@ CREATE TABLE dw.dim_tempo (
     id_tutor INT NOT NULL,
     id_pet INT NOT NULL,
     id_quadro_clinico INT NOT NULL,
+    id_turno INT NOT NULL,
     id_funcao_principal INT NOT NULL,
     id_funcao_secundaria INT NULL,
     id_tempo_inicio INT NOT NULL,
     id_tempo_fim INT NOT NULL,
     quantidade INT DEFAULT 1,
+    valor_atendimento DECIMAL(10,2) DEFAULT 0.00,
     data_carga DATE NOT NULL,
 
     CONSTRAINT uq_fato_atendimento_cod_atendimento UNIQUE (cod_atendimento),
@@ -621,6 +624,7 @@ CREATE TABLE dw.dim_tempo (
     CONSTRAINT fk_atendimento_tutor FOREIGN KEY (id_tutor) REFERENCES dw.dim_tutor(id_tutor),
     CONSTRAINT fk_atendimento_pet FOREIGN KEY (id_pet) REFERENCES dw.dim_pet(id_pet),
     CONSTRAINT fk_atendimento_quadro_clinico FOREIGN KEY (id_quadro_clinico) REFERENCES dw.dim_quadro_clinico(id_quadro_clinico),
+    CONSTRAINT fk_atendimento_turno FOREIGN KEY (id_turno) REFERENCES dw.dim_turno(id_turno),
     CONSTRAINT fk_atendimento_funcao_principal FOREIGN KEY (id_funcao_principal) REFERENCES dw.dim_funcao(id_funcao),
     CONSTRAINT fk_atendimento_funcao_secundaria FOREIGN KEY (id_funcao_secundaria) REFERENCES dw.dim_funcao(id_funcao),
     CONSTRAINT fk_atendimento_tempo_inicio FOREIGN KEY (id_tempo_inicio) REFERENCES dw.dim_tempo(id_tempo),
