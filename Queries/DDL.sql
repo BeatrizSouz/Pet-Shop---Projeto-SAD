@@ -18,6 +18,7 @@ Dimens�es:
 - dim_filial:SCD Tipo 2;
 - dim_tipo_servico:SCD Tipo 1;
 - dim_funcionario:SCD Tipo 2;
+- dim_funcao:SCD Tipo 1;
 - dim_tutor:SCD Tipo 2;
 - dim_pet:SCD Tipo 2;
 - dim_quadro_clinico:SCD Tipo 2;
@@ -563,10 +564,8 @@ Etapas:
 CREATE TABLE
     dw.dim_funcao (
         id_funcao INT IDENTITY (1, 1) PRIMARY KEY,
-        cod_funcao INT NOT NULL,
         funcao VARCHAR(100) NOT NULL,
         data_atualizacao DATE NOT NULL,
-        CONSTRAINT uq_dim_funcao_cod_tipo_funcao UNIQUE (cod_funcao)
     );
 
 /* ============================================================
@@ -576,7 +575,6 @@ CREATE TABLE
 Granularidade:
 - uma linha para cada atendimento.
 
-Medidas:
 - quantidade;
 - tempo_resolucao_horas.
 
