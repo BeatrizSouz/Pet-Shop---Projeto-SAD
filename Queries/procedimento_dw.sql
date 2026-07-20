@@ -2,7 +2,41 @@ USE DW_Atendimentos
 
 GO
 
-CREATE or Alter Procedure dw.sp_procedimento_dimensoes_dw
+CREATE or Alter Procedure dw.sp_procedimento_dimensoes_servico_dw
+@data_carga Date
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    IF @data_carga IS NULL
+        THROW 50001, 'A data da carga deve ser informada.', 1;
+    
+    DELETE FROM dw.dim_tipo_servico;
+    
+    /* Serviço - Tipo 1 */
+    
+   	Merge dw.dim_tipo_servico as destino
+   	Using (
+   		Select cod_tipo_servico, nome_tipo_servico 
+   		From staging.stg_tipo_servico 
+   		WHERE data_carga = @data_carga
+   	) AS origem
+   	ON (destino.cod_tipo_servico = origem.cod_tipo_servico)
+   	
+   	When Matched and destino.nome_tipo_servico <> origem.nome_tipo_servico Then
+   		Update set
+   			destino.nome_tipo_servico = origem.nome_tipo_servico,
+   			destino.data_atualizacao = @data_carga
+   	
+   	When Not Matched Then
+   		Insert (cod_tipo_servico, nome_tipo_servico, data_atualizacao)
+   		VALUES (origem.cod_tipo_servico, origem.nome_tipo_servico, @data_carga);
+   	
+END
+
+GO
+
+CREATE or Alter Procedure dw.sp_procedimento_dimensoes_funcionario_dw
 @data_carga Date
 AS
 BEGIN
@@ -12,7 +46,6 @@ BEGIN
         THROW 50001, 'A data da carga deve ser informada.', 1;
     
     DELETE FROM DW_Atendimentos.dw.dim_funcionario;
-    DELETE FROM dw.dim_tipo_servico;
     
     /* Funcionario - Tipo 2*/
     
@@ -39,26 +72,6 @@ BEGIN
     	Select 1 From dw.dim_funcionario df2
     	WHERE df2.cod_funcionario = stg.cod_funcionario AND df2.registro_atual = 1
     	);
-		
-    /* Serviço - Tipo 1 */
-    
-   	Merge dw.dim_tipo_servico as destino
-   	Using (
-   		Select cod_tipo_servico, nome_tipo_servico 
-   		From staging.stg_tipo_servico 
-   		WHERE data_carga = @data_carga
-   	) AS origem
-   	ON (destino.cod_tipo_servico = origem.cod_tipo_servico)
-   	
-   	When Matched and destino.nome_tipo_servico <> origem.nome_tipo_servico Then
-   		Update set
-   			destino.nome_tipo_servico = origem.nome_tipo_servico,
-   			destino.data_atualizacao = @data_carga
-   	
-   	When Not Matched Then
-   		Insert (cod_tipo_servico, nome_tipo_servico, data_atualizacao)
-   		VALUES (origem.cod_tipo_servico, origem.nome_tipo_servico, @data_carga);
-   	
 END
 
 Go
@@ -211,7 +224,7 @@ End
 
 Go
     
-CREATE or Alter Procedure dw.sp_procedimento_dimensoes_turno_dw
+CREATE or Alter Procedure dw.sp_procedimento_dimensoes_dw
 @data_carga Date
 AS
 BEGIN
@@ -271,6 +284,18 @@ BEGIN
 			Where c.cod_quadro_clinico = sq.cod_quadro_clinico and c.registro_atual = 1
 		);
 End
+
+-- Garanta primeiro que a tabela de tempo tem o período coberto
+EXEC dw.sp_carregar_dimensao_tempo '2026-07-01', '2026-08-18';
+
+EXEC dw.sp_procedimento_dimensoes_servico_dw '2026-07-18'; 
+EXEC dw.sp_procedimento_dimensoes_funcionario_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensoes_tutor_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensoes_turno_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensoes_quadro_clinico_dw '2026-07-18';
 
 GO
 
