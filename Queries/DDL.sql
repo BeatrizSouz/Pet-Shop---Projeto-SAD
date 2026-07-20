@@ -711,7 +711,7 @@ CREATE TABLE
 
 CREATE TABLE
     ag.agregado_dim_especie (
-        id_pet INT IDENTITY (1, 1) PRIMARY KEY,
+        id_especie INT IDENTITY (1, 1) PRIMARY KEY,
         nome_especie VARCHAR(100) NOT NULL
     );
 
@@ -723,7 +723,7 @@ CREATE TABLE
         id_pet_especie INT NOT NULL,
         quantidade INT DEFAULT 1,
         CONSTRAINT fk_data_especie FOREIGN KEY (id_data) REFERENCES ag.agregado_dim_tempo(id_tempo_ag),
-        CONSTRAINT fk_especie_agregado FOREIGN KEY (id_pet_especie) REFERENCES ag.agregado_dim_especie(id_pet)
+        CONSTRAINT fk_especie_agregado FOREIGN KEY (id_pet_especie) REFERENCES ag.agregado_dim_especie(id_especie)
 );
 
 /*============================================================
