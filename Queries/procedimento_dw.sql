@@ -466,9 +466,72 @@ SET NOCOUNT ON;
 END;
 GO
 
-EXEC ag.sp_carregar_agregado_dimensao_especie
-EXEC ag.sp_carregar_agregado_dimensao_tempo
-EXEC ag.sp_carregar_agregado_fato_especie
-select * from ag.agregado_dim_tempo
-select * from ag.agregado_dim_especie
-select * from ag.agregado_fato_especie
+EXEC ag.sp_carregar_agregado_dimensao_especie;
+EXEC ag.sp_carregar_agregado_dimensao_tempo;
+EXEC ag.sp_carregar_agregado_fato_especie;
+select * from ag.agregado_dim_tempo;
+select * from ag.agregado_dim_especie;
+select * from ag.agregado_fato_especie;
+
+/*============================================================
+
+       Procedure agregados por filial 
+
+       Dimensão agregada tempo: Utilizada por todas as tabelas agregadas 
+       Dimensão agregada filial: Uma linha para cada filial
+       Fato agregado filial: Contabiliza a quantidade de atendimento por filial por período 
+
+============================================================*/
+GO
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_filial
+AS
+BEGIN
+SET NOCOUNT ON; 
+    INSERT INTO ag.agregado_dim_filial(
+        id_filial,
+        cidade,
+        estado,
+        nome_filial
+       )SELECT 
+            df.id_filial,
+            df.cidade,
+            df.estado,
+            df.nome_filial
+       FROM dw.dim_filial df
+       WHERE NOT EXISTS (
+            SELECT 1 
+            FROM ag.agregado_dim_filial destino 
+            WHERE destino.id_filial = df.id_filial
+       );
+
+END;
+GO
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_fato_filial
+AS
+BEGIN 
+SET NOCOUNT ON; 
+
+    TRUNCATE TABLE ag.agregado_fato_filial;
+
+    INSERT INTO ag.agregado_fato_filial( 
+        id_data,
+        id_filial,
+        quantidade
+    )
+    SELECT 
+        t.id_tempo,
+        fi.id_filial,
+        sum(f.quantidade)
+    FROM dw.fato_atendimento f
+    JOIN dw.dim_tempo t on (f.id_tempo_inicio = t.id_tempo)
+    JOIN dw.dim_filial fi on (f.id_filial = fi.id_filial)
+    GROUP BY t.id_tempo,fi.id_filial 
+     
+END;
+GO
+EXEC ag.sp_carregar_agregado_dimensao_filial;
+EXEC ag.sp_carregar_agregado_dimensao_tempo;
+EXEC ag.sp_carregar_agregado_fato_filial;
+select * from ag.agregado_dim_tempo;
+select * from ag.agregado_dim_filial;
+select * from ag.agregado_fato_filial;
