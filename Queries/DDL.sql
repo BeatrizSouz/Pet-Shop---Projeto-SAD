@@ -149,6 +149,8 @@ DROP TABLE IF EXISTS staging.stg_tutor;
 
 DROP TABLE IF EXISTS staging.stg_pet;
 
+DROP TABLE IF EXISTS staging.stg_turno;
+
 DROP TABLE IF EXISTS oltp.atendimento;
 
 DROP TABLE IF EXISTS oltp.quadro_clinico;
@@ -156,6 +158,8 @@ DROP TABLE IF EXISTS oltp.quadro_clinico;
 DROP TABLE IF EXISTS oltp.pet;
 
 DROP TABLE IF EXISTS oltp.tutor;
+
+DROP TABLE IF EXISTS oltp.turno;
 
 DROP TABLE IF EXISTS oltp.funcionario;
 
@@ -177,6 +181,12 @@ CREATE TABLE
         cod_tipo_servico INT IDENTITY (1, 1) PRIMARY KEY,
         nome_tipo_servico VARCHAR(100) NOT NULL,
         valor_servico DECIMAL(10, 2) DEFAULT 0.00
+    );
+
+CREATE TABLE
+    oltp.Turno (
+        cod_turno INT IDENTITY (1, 1) PRIMARY KEY,
+        turno VARCHAR(100) NOT NULL,
     );
 
 /* Endere�os*/
@@ -263,6 +273,7 @@ CREATE TABLE
         cod_tutor INT NOT NULL,
         cod_pet INT NOT NULL,
         cod_quadro_clinico INT NOT NULL,
+        cod_turno INT NOT NULL,
         data_inicio DATETIME2 NOT NULL,
         data_fim DATETIME2 NULL,
         prioridade VARCHAR(20) NOT NULL,
@@ -271,6 +282,7 @@ CREATE TABLE
         CONSTRAINT fk_atendimento_funcionario FOREIGN KEY (cod_funcionario) REFERENCES oltp.funcionario (cod_funcionario),
         CONSTRAINT fk_atendimento_tutor FOREIGN KEY (cod_tutor) REFERENCES oltp.tutor (cod_tutor),
         CONSTRAINT fk_atendimento_pet FOREIGN KEY (cod_pet) REFERENCES oltp.pet (cod_pet),
+        CONSTRAINT fk_atendimento_turno FOREIGN KEY (cod_turno) REFERENCES oltp.turno (cod_turno),
         CONSTRAINT fk_atendimento_quadro_clinico FOREIGN KEY (cod_quadro_clinico) REFERENCES oltp.quadro_clinico (cod_quadro_clinico)
     );
 
@@ -288,6 +300,13 @@ CREATE TABLE
     staging.stg_tipo_servico (
         cod_tipo_servico INT NOT NULL,
         nome_tipo_servico VARCHAR(100) NOT NULL,
+        data_carga DATE NOT NULL
+    );
+
+CREATE TABLE
+    staging.stg_turno (
+        turno VARCHAR(100) NOT NULL,
+        cod_turno INT NOT NULL,
         data_carga DATE NOT NULL
     );
 
@@ -357,6 +376,7 @@ CREATE TABLE
         cod_funcionario INT NOT NULL,
         cod_tutor INT NOT NULL,
         cod_pet INT NOT NULL,
+        cod_turno INT NOT NULL,
         cod_quadro_clinico INT NOT NULL,
         data_inicio DATETIME2 NOT NULL,
         data_fim DATETIME2 NULL,
@@ -380,6 +400,8 @@ CREATE INDEX ix_stg_funcionario_data_carga ON staging.stg_funcionario (data_carg
 CREATE INDEX ix_stg_tutor_data_carga ON staging.stg_tutor (data_carga);
 
 CREATE INDEX ix_stg_pet_data_carga ON staging.stg_pet (data_carga);
+
+CREATE INDEX ix_stg_turno_data_carga ON staging.stg_turno (data_carga);
 
 GO
 /* ============================================================
@@ -526,6 +548,7 @@ Turno:
 CREATE TABLE
     dw.dim_turno (
         id_turno INT IDENTITY (1, 1) PRIMARY KEY,
+        cod_turno INT NOT NULL,
         turno VARCHAR(5) NOT NULL
     );
 
@@ -561,6 +584,7 @@ Etapas:
 CREATE TABLE
     dw.dim_funcao (
         id_funcao INT IDENTITY (1, 1) PRIMARY KEY,
+        cod_funcao INT NOT NULL,
         funcao VARCHAR(100) NOT NULL,
         data_atualizacao DATE NOT NULL,
     );
