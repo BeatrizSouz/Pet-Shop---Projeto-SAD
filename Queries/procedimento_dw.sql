@@ -1,5 +1,5 @@
 USE DW_Atendimentos
-
+ 
 GO
 
 CREATE or Alter Procedure dw.sp_procedimento_dimensoes_dw
@@ -210,12 +210,7 @@ BEGIN
 End
 
 Go
-    
-EXEC dw.sp_procedimento_dimensoes_dw '2026-07-18'
-EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18'
-EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18'
-EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18'
-EXEC dw.sp_carregar_dimensao_tempo '2026-05-18' , '2026-07-18'
+
 CREATE or Alter Procedure dw.sp_procedimento_dimensoes_turno_dw
 @data_carga Date
 AS
@@ -360,6 +355,3 @@ BEGIN
 END;
 GO
 
-Exec dw.sp_carregar_fato_atendimento '2026-07-18'
-
-Select * FROM dw.fato_atendimento
