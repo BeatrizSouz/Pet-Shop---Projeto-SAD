@@ -284,19 +284,6 @@ BEGIN
 			Where c.cod_quadro_clinico = sq.cod_quadro_clinico and c.registro_atual = 1
 		);
 End
-
--- Garanta primeiro que a tabela de tempo tem o período coberto
-EXEC dw.sp_carregar_dimensao_tempo '2026-07-01', '2026-08-18';
-
-EXEC dw.sp_procedimento_dimensoes_servico_dw '2026-07-18'; 
-EXEC dw.sp_procedimento_dimensoes_funcionario_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensoes_tutor_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensoes_turno_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensoes_quadro_clinico_dw '2026-07-18';
-
 GO
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_fato_atendimento
@@ -379,7 +366,17 @@ BEGIN
 
 END;
 GO
+-- Garanta primeiro que a tabela de tempo tem o período coberto
+EXEC dw.sp_carregar_dimensao_tempo '2026-07-01', '2026-08-18';
 
+EXEC dw.sp_procedimento_dimensoes_servico_dw '2026-07-18'; 
+EXEC dw.sp_procedimento_dimensoes_funcionario_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensoes_tutor_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensoes_dw '2026-07-18';
+EXEC dw.sp_procedimento_dimensoes_quadro_clinico_dw '2026-07-18';
 Exec dw.sp_carregar_fato_atendimento '2026-07-18'
 
 Select * FROM dw.fato_atendimento
