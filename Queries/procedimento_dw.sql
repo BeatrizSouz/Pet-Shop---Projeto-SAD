@@ -380,3 +380,91 @@ EXEC dw.sp_procedimento_dimensoes_quadro_clinico_dw '2026-07-18';
 Exec dw.sp_carregar_fato_atendimento '2026-07-18'
 
 Select * FROM dw.fato_atendimento
+
+/*============================================================
+
+    Procedure para agregados  
+
+============================================================*/
+GO
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_tempo
+AS
+BEGIN 
+SET NOCOUNT ON; 
+    INSERT INTO ag.agregado_dim_tempo(
+        id_tempo_ag, 
+        data_completa, 
+        dia, 
+        mes, 
+        nome_mes, 
+        trimestre, 
+        ano, 
+        numero_dia_semana, 
+        nome_dia_semana
+    )
+    SELECT 
+        t.id_tempo, 
+        t.data_completa, 
+        t.dia, 
+        t.mes, 
+        t.nome_mes, 
+        t.trimestre, 
+        t.ano, 
+        t.numero_dia_semana, 
+        t.nome_dia_semana 
+    FROM dw.dim_tempo t
+   
+    WHERE NOT EXISTS (
+        SELECT 1 
+        FROM ag.agregado_dim_tempo destino 
+        WHERE destino.data_completa = t.data_completa
+    );
+END;
+GO
+
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_especie
+AS
+BEGIN 
+SET NOCOUNT ON; 
+
+    INSERT INTO ag.agregado_dim_especie(nome_especie)
+    SELECT DISTINCT especie
+    FROM dw.dim_pet 
+    WHERE especie NOT IN (
+        SELECT nome_especie FROM ag.agregado_dim_especie
+    );
+END;
+GO
+
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_fato_especie
+AS
+BEGIN 
+SET NOCOUNT ON; 
+
+    TRUNCATE TABLE ag.agregado_fato_especie;
+
+    INSERT INTO ag.agregado_fato_especie( 
+        id_data,
+        id_pet_especie,
+        quantidade
+    )
+    SELECT 
+        t.id_tempo,
+        e.id_especie,
+        sum(f.quantidade)
+    FROM dw.fato_atendimento f
+    JOIN dw.dim_tempo t on (f.id_tempo_inicio = t.id_tempo)
+    JOIN dw.dim_pet p on (f.id_pet = p.id_pet)
+    JOIN ag.agregado_dim_especie e ON p.especie = e.nome_especie 
+    GROUP BY 
+        t.id_tempo, 
+        e.id_especie;
+END;
+GO
+
+EXEC ag.sp_carregar_agregado_dimensao_especie
+EXEC ag.sp_carregar_agregado_dimensao_tempo
+EXEC ag.sp_carregar_agregado_fato_especie
+select * from ag.agregado_dim_tempo
+select * from ag.agregado_dim_especie
+select * from ag.agregado_fato_especie
