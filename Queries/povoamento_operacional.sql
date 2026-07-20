@@ -65,11 +65,29 @@ INSERT INTO oltp.quadro_clinico (situacao_inicial, situacao_final) VALUES
 ('Apatia', 'Vitaminas prescritas'),
 ('Limpeza de ouvidos', 'Procedimento concluído');
 
--- 9. Atendimentos
-INSERT INTO oltp.atendimento (cod_tipo_servico, cod_filial, cod_funcionario, cod_tutor, cod_pet, cod_quadro_clinico, data_inicio, data_fim, prioridade) VALUES 
-(1, 1, 1, 1, 1, 1, '2026-07-16 08:00:00', '2026-07-16 09:00:00', 'Baixa'),
-(2, 2, 2, 2, 2, 2, '2026-07-16 09:00:00', '2026-07-16 10:00:00', 'Alta'),
-(5, 3, 3, 3, 3, 3, '2026-07-16 10:00:00', '2026-07-16 12:00:00', 'Alta'),
-(3, 4, 5, 4, 4, 4, '2026-07-16 14:00:00', '2026-07-16 14:30:00', 'Média'),
-(1, 5, 1, 5, 5, 5, '2026-07-16 15:00:00', '2026-07-16 16:00:00', 'Baixa');
+-- 9 Turno
+Insert Into oltp.turno (turno) VALUES 
+('Manhã'),
+('Tarde'),
+('Noite');
+
+-- 10. Atendimentos
+INSERT INTO oltp.atendimento (
+    cod_tipo_servico, 
+    cod_filial, 
+    cod_funcionario, 
+    cod_turno, 
+    cod_pet, 
+    cod_tutor,        
+    cod_quadro_clinico, 
+    data_inicio, 
+    data_fim, 
+    prioridade
+) VALUES 
+(1, 1, 1, 1, 1, 1, 1, '2026-07-16 08:00:00', '2026-07-16 09:00:00', 'Baixa'), 
+(2, 2, 2, 1, 2, 2, 2, '2026-07-16 09:00:00', '2026-07-16 10:00:00', 'Alta'), 
+(5, 3, 3, 1, 3, 3, 3, '2026-07-16 10:00:00', '2026-07-16 12:00:00', 'Alta'),  
+(3, 4, 5, 1, 4, 4, 4, '2026-07-16 14:00:00', '2026-07-16 14:30:00', 'Média'), 
+(1, 5, 1, 1, 5, 5, 5, '2026-07-16 15:00:00', '2026-07-16 16:00:00', 'Baixa'); 
+
 GO

@@ -65,14 +65,19 @@ BEGIN
     SELECT cod_quadro_clinico, situacao_inicial, situacao_final, @data_carga
     FROM oltp.quadro_clinico;
 
-    Insert into staging.stg_atendimento (cod_atendimento, cod_tipo_servico, cod_filial, cod_funcionario, cod_tutor, cod_pet, cod_quadro_clinico, data_inicio, data_fim, prioridade, valor, data_carga)
-    SELECT a.cod_atendimento, a.cod_tipo_servico, a.cod_filial, a.cod_funcionario, a.cod_tutor, a.cod_pet, a.cod_quadro_clinico, a.data_inicio, a.data_fim, a.prioridade, ts.valor_servico, @data_carga
+    Insert into staging.stg_turno (turno, cod_turno, data_carga)
+    Select turno, cod_turno, @data_carga
+    from oltp.turno;
+        
+    Insert into staging.stg_atendimento (cod_atendimento, cod_tipo_servico, cod_filial, cod_funcionario, cod_tutor, cod_pet, cod_quadro_clinico, cod_turno, data_inicio, data_fim, prioridade, valor, data_carga)
+    SELECT a.cod_atendimento, a.cod_tipo_servico, a.cod_filial, a.cod_funcionario, a.cod_tutor, a.cod_pet, a.cod_quadro_clinico, a.cod_tutor, a.data_inicio, a.data_fim, a.prioridade, ts.valor_servico, @data_carga
     FROM oltp.atendimento a
     INNER JOIN oltp.tipo_servico ts
     ON a.cod_tipo_servico = ts.cod_tipo_servico;
+    
 END;
 GO
 
 Exec staging.sp_carregar_staging '2026-07-18'
 
-SELECT * from staging.stg_funcionario
+SELECT * from staging.stg_atendimento
