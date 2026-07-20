@@ -383,7 +383,11 @@ Select * FROM dw.fato_atendimento
 
 /*============================================================
 
-    Procedure para agregados  
+       Procedure agregados por espécie 
+
+       Dimensão agregada tempo: Utilizada por todas as tabelas agregadas 
+       Dimensão agregada especie: Uma linha para cada espécie
+       Fato agregado especie: Contabiliza a quantidade de atendimento por espécie por período 
 
 ============================================================*/
 GO
