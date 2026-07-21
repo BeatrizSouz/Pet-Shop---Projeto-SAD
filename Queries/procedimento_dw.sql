@@ -75,7 +75,6 @@ BEGIN
 END
 
 Go
-
 CREATE or Alter Procedure dw.sp_procedimento_dimensao_funcao_dw
 @data_carga Date
 AS
@@ -89,23 +88,27 @@ BEGIN
     
     /* Função - Tipo 1*/
     
-    Merge dw.dim_funcao as destino
-    Using (
-    	Select funcao_primaria, funcao_segundaria
-    	From staging.stg_funcao
-    	Where data_carga = @data_carga
-    ) As origem
-    ON(destino.funcao_primaria = origem.funcao_primaria)
+    MERGE dw.dim_funcao AS destino
+    USING (
+        SELECT 
+            cod_funcao, 
+            funcao
+        FROM staging.stg_funcao
+        WHERE data_carga = @data_carga
+    ) AS origem
+    ON (destino.cod_funcao = origem.cod_funcao)
     
-	WHEN MATCHED AND ISNULL(destino.funcao_segundaria, '') <> ISNULL(origem.funcao_segundaria, '') THEN
-		UPDATE SET
-			destino.funcao_segundaria = origem.funcao_segundaria,
-    		destino.data_atualizacao = @data_carga
     
-	When Not Matched Then
-		Insert (funcao_primaria, funcao_segundaria, data_atualizacao)
-		Values (origem.funcao_primaria, origem.funcao_segundaria, @data_carga);
-END
+    WHEN MATCHED AND destino.funcao <> origem.funcao THEN
+        UPDATE SET
+            destino.funcao = origem.funcao,
+            destino.data_atualizacao = @data_carga
+    
+    
+    WHEN NOT MATCHED THEN
+        INSERT (cod_funcao, funcao, data_atualizacao)
+        VALUES (origem.cod_funcao, origem.funcao, @data_carga);
+END;
 
 Go
 CREATE or Alter Procedure dw.sp_procedimento_dimensao_filial_dw
@@ -359,11 +362,10 @@ BEGIN
     LEFT JOIN dw.dim_tempo dtf 
         ON CAST(stg.data_fim AS DATE) = dtf.data_completa
 
-    FULL outer JOIN dw.dim_funcao dfnc 
-        ON dfnc.funcao_primaria = stg.cod_funcao_principal
-    
-    FULL outer JOIN dw.dim_funcao dfnc2 
-        ON dfnc2.funcao_segundaria = stg.cod_funcao_secundaria
+    INNER JOIN dw.dim_funcao dfnc 
+        ON stg.cod_funcao_principal = dfnc.cod_funcao
+    LEFT JOIN dw.dim_funcao dfnc2 
+        ON stg.cod_funcao_secundaria = dfnc2.cod_funcao
         
     WHERE stg.data_carga = @data_carga;
 
@@ -403,7 +405,7 @@ Select * FROM dw.fato_atendimento
 
 ============================================================*/
 GO
-/*
+
 CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_tempo
 AS
 BEGIN 
