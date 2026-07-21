@@ -502,7 +502,7 @@ AS
 BEGIN
 SET NOCOUNT ON; 
 
-    TRUNCATE TABLE ag.agregado_dimensao_filial;
+    TRUNCATE TABLE ag.agregado_dim_filial;
 
     INSERT INTO ag.agregado_dim_filial(
         id_filial,
