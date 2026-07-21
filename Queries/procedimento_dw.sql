@@ -481,12 +481,18 @@ SET NOCOUNT ON;
 END;
 GO
 
-EXEC ag.sp_carregar_agregado_dimensao_especie
-EXEC ag.sp_carregar_agregado_dimensao_tempo
-EXEC ag.sp_carregar_agregado_fato_especie
+EXEC ag.sp_carregar_agregado_dimensao_especie;
+EXEC ag.sp_carregar_agregado_dimensao_tempo;
+EXEC ag.sp_carregar_agregado_fato_especie;
+select * from ag.agregado_dim_tempo;
+select * from ag.agregado_dim_especie;
+select * from ag.agregado_fato_especie;
 
-select * from ag.agregado_dim_tempo
-select * from ag.agregado_dim_especie
-select * from ag.agregado_fato_especie
+/*============================================================
 
-Select * FROM dw.fato_atendimento
+       Procedure agregados por filial 
+
+       Dimensão agregada tempo: Utilizada por todas as tabelas agregadas 
+       Dimensão agregada filial: Uma linha para cada filial
+       Fato agregado filial: Contabiliza a quantidade de atendimento por filial por período 
+
