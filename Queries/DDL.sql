@@ -272,7 +272,7 @@ CREATE TABLE
         CRMV VARCHAR(100) NULL,
         CONSTRAINT fk_endereco_funcionario FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco (cod_endereco),
         CONSTRAINT fk_funca_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao),
-        CONSTRAINT fk_funca_funcionario_segundaria FOREIGN KEY (cod_funcao_secundaria) REFERENCES oltp.funcao (cod_funcao)
+        CONSTRAINT fk_funca_funcionario_segundaria FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao)
     );
 
 /* Os clientes */
@@ -377,8 +377,8 @@ CREATE TABLE
 
 CREATE TABLE
     staging.stg_funcao (
-        funcao_primaria VARCHAR(100) NOT NULL,
-        funcao_segundaria VARCHAR(100),
+        cod_funcao INT NOT NULL,
+        funcao VARCHAR(100) NOT NULL,
         data_carga DATE NOT NULL
     );
 
@@ -631,9 +631,10 @@ Etapas:
 CREATE TABLE
     dw.dim_funcao (
         id_funcao INT IDENTITY (1, 1) PRIMARY KEY,
-        funcao_primaria VARCHAR(100) NOT NULL,
-        funcao_segundaria Varchar(100),
+        cod_funcao INT NOT NULL,
+        funcao VARCHAR(100) NOT NULL,
         data_atualizacao DATE NOT NULL,
+        CONSTRAINT uq_dim_funcao_cod UNIQUE (cod_funcao)
     );
 
 /* ============================================================
