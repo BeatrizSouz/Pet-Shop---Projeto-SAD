@@ -47,13 +47,12 @@ BEGIN
     INNER JOIN oltp.endereco e
     ON f.cod_endereco = e.cod_endereco;
 
-    INSERT INTO staging.stg_funcao (funcao_primaria, funcao_segundaria, data_carga)
-    SELECT fu.cod_funcao, fu.cod_funcao_secundaria, @data_carga
-    FROM oltp.funcionario fu
-    Inner Join DW_Atendimentos.oltp.funcao f 
-    On fu.cod_funcao = f.cod_funcao 
-   	Left Join DW_Atendimentos.oltp.funcao f2 
-    ON fu.cod_funcao_secundaria = f2.cod_funcao;
+    INSERT INTO staging.stg_funcao (cod_funcao, funcao, data_carga)
+    SELECT 
+        cod_funcao, 
+        funcao, 
+        @data_carga
+    FROM oltp.funcao;
 
     Insert into staging.stg_tutor (cod_tutor, cpf, cidade,estado, nome_tutor, email, telefone, data_carga)
     SELECT t.cod_tutor, t.cpf, e.cidade, e.estado, t.nome_tutor, t.email, t.telefone, @data_carga
@@ -73,13 +72,44 @@ BEGIN
     Select turno, cod_turno, @data_carga
     from oltp.turno;
         
-    Insert into staging.stg_atendimento (cod_atendimento, cod_tipo_servico, cod_filial, cod_funcionario, cod_tutor, cod_pet, cod_quadro_clinico, cod_turno, cod_funcao_principal, cod_funcao_secundaria, data_inicio, data_fim, prioridade, valor, data_carga)
-    SELECT a.cod_atendimento, a.cod_tipo_servico, a.cod_filial, a.cod_funcionario, a.cod_tutor, a.cod_pet, a.cod_quadro_clinico, a.cod_turno, fu.cod_funcao, fu.cod_funcao_secundaria, a.data_inicio, a.data_fim, a.prioridade, ts.valor_servico, @data_carga
+    INSERT INTO staging.stg_atendimento (
+        cod_atendimento, 
+        cod_tipo_servico, 
+        cod_filial, 
+        cod_funcionario, 
+        cod_tutor, 
+        cod_pet, 
+        cod_quadro_clinico, 
+        cod_turno, 
+        cod_funcao_principal, 
+        cod_funcao_secundaria, 
+        data_inicio, 
+        data_fim, 
+        prioridade, 
+        valor, 
+        data_carga
+    )
+    SELECT 
+        a.cod_atendimento, 
+        a.cod_tipo_servico, 
+        a.cod_filial, 
+        a.cod_funcionario, 
+        a.cod_tutor, 
+        a.cod_pet, 
+        a.cod_quadro_clinico, 
+        a.cod_turno, 
+        fu.cod_funcao AS cod_funcao_principal,        
+        fu.cod_funcao_secundaria,                     
+        a.data_inicio, 
+        a.data_fim, 
+        a.prioridade, 
+        ts.valor_servico AS valor, 
+        @data_carga
     FROM oltp.atendimento a
-    INNER JOIN oltp.tipo_servico ts
-    ON a.cod_tipo_servico = ts.cod_tipo_servico
-    Inner Join oltp.funcionario fu
-    ON a.cod_funcionario = fu.cod_funcionario;
+    INNER JOIN oltp.tipo_servico ts 
+        ON a.cod_tipo_servico = ts.cod_tipo_servico
+    INNER JOIN oltp.funcionario fu 
+        ON a.cod_funcionario = fu.cod_funcionario;
     
 END;
 GO
@@ -87,3 +117,4 @@ GO
 Exec staging.sp_carregar_staging '2026-07-18'
 
 SELECT * from DW_Atendimentos.staging.stg_atendimento
+select * from oltp.funcionario
