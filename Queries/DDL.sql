@@ -265,12 +265,14 @@ CREATE TABLE
     oltp.funcionario (
         cod_funcionario INT IDENTITY (1, 1) PRIMARY KEY,
         cod_endereco INT,
-        cod_funcao INT,
+        cod_funcao INT NOT NULL,
+        cod_funcao_secundaria INT,
         matricula INT NOT NULL,
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
         CONSTRAINT fk_endereco_funcionario FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco (cod_endereco),
-        CONSTRAINT fk_funca_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao)
+        CONSTRAINT fk_funca_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao),
+        CONSTRAINT fk_funca_funcionario_segundaria FOREIGN KEY (cod_funcao_secundaria) REFERENCES oltp.funcao (cod_funcao)
     );
 
 /* Os clientes */
@@ -375,8 +377,8 @@ CREATE TABLE
 
 CREATE TABLE
     staging.stg_funcao (
-        cod_funcao INT NOT NULL,
-        funcao VARCHAR(100) NOT NULL,
+        funcao_primaria VARCHAR(100) NOT NULL,
+        funcao_segundaria VARCHAR(100),
         data_carga DATE NOT NULL
     );
 
@@ -421,6 +423,8 @@ CREATE TABLE
         cod_pet INT NOT NULL,
         cod_turno INT NOT NULL,
         cod_quadro_clinico INT NOT NULL,
+		cod_funcao_principal INT NOT NULL,
+        cod_funcao_secundaria INT NULL,
         data_inicio DATETIME2 NOT NULL,
         data_fim DATETIME2 NULL,
         prioridade VARCHAR(20) NOT NULL,
@@ -627,8 +631,8 @@ Etapas:
 CREATE TABLE
     dw.dim_funcao (
         id_funcao INT IDENTITY (1, 1) PRIMARY KEY,
-        cod_funcao INT NOT NULL,
-        funcao VARCHAR(100) NOT NULL,
+        funcao_primaria VARCHAR(100) NOT NULL,
+        funcao_segundaria Varchar(100),
         data_atualizacao DATE NOT NULL,
     );
 
@@ -690,8 +694,6 @@ CREATE TABLE
     Fato: especie 
 
 ============================================================*/
-
-
 
 
 GO

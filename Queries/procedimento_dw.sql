@@ -91,20 +91,20 @@ BEGIN
     
     Merge dw.dim_funcao as destino
     Using (
-    	Select cod_funcao, funcao
+    	Select funcao_primaria, funcao_segundaria
     	From staging.stg_funcao
     	Where data_carga = @data_carga
     ) As origem
-    ON(destino.cod_funcao = origem.cod_funcao)
+    ON(destino.funcao_primaria = origem.funcao_primaria)
     
-    When Matched and destino.funcao <> origem.funcao Then
-    	Update set
-    		destino.funcao = origem.funcao,
+	WHEN MATCHED AND ISNULL(destino.funcao_segundaria, '') <> ISNULL(origem.funcao_segundaria, '') THEN
+		UPDATE SET
+			destino.funcao_segundaria = origem.funcao_segundaria,
     		destino.data_atualizacao = @data_carga
     
 	When Not Matched Then
-		Insert (cod_funcao, funcao, data_atualizacao)
-		Values (origem.cod_funcao,  origem.funcao, @data_carga);
+		Insert (funcao_primaria, funcao_segundaria, data_atualizacao)
+		Values (origem.funcao_primaria, origem.funcao_segundaria, @data_carga);
 END
 
 Go
@@ -324,7 +324,7 @@ BEGIN
         dtu_turno.id_turno,
         dqc.id_quadro_clinico,
         dfnc.id_funcao,          
-        NULL,                   
+        dfnc2.id_funcao,                   
         dti.id_tempo,           
         dtf.id_tempo,           
         1 AS quantidade,        
@@ -359,8 +359,11 @@ BEGIN
     LEFT JOIN dw.dim_tempo dtf 
         ON CAST(stg.data_fim AS DATE) = dtf.data_completa
 
-    LEFT JOIN dw.dim_funcao dfnc 
-        ON dfnc.cod_funcao = stg.cod_turno
+    FULL outer JOIN dw.dim_funcao dfnc 
+        ON dfnc.funcao_primaria = stg.cod_funcao_principal
+    
+    FULL outer JOIN dw.dim_funcao dfnc2 
+        ON dfnc2.funcao_segundaria = stg.cod_funcao_secundaria
         
     WHERE stg.data_carga = @data_carga;
 
@@ -370,13 +373,22 @@ GO
 EXEC dw.sp_carregar_dimensao_tempo '2026-07-01', '2026-08-18';
 
 EXEC dw.sp_procedimento_dimensoes_servico_dw '2026-07-18'; 
+Select * from DW_Atendimentos.dw.dim_filial;
 EXEC dw.sp_procedimento_dimensoes_funcionario_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_funcionario;
 EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_funcao;
 EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_filial;
 EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_pet;
 EXEC dw.sp_procedimento_dimensoes_tutor_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_tutor;
 EXEC dw.sp_procedimento_dimensoes_dw '2026-07-18';
+Select * from dw.dim_turno;
 EXEC dw.sp_procedimento_dimensoes_quadro_clinico_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_quadro_clinico dqc 
+
 Exec dw.sp_carregar_fato_atendimento '2026-07-18'
 
 Select * FROM dw.fato_atendimento
@@ -391,6 +403,7 @@ Select * FROM dw.fato_atendimento
 
 ============================================================*/
 GO
+/*
 CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_tempo
 AS
 BEGIN 
@@ -469,6 +482,9 @@ GO
 EXEC ag.sp_carregar_agregado_dimensao_especie
 EXEC ag.sp_carregar_agregado_dimensao_tempo
 EXEC ag.sp_carregar_agregado_fato_especie
+
 select * from ag.agregado_dim_tempo
 select * from ag.agregado_dim_especie
 select * from ag.agregado_fato_especie
+
+Select * FROM dw.fato_atendimento
