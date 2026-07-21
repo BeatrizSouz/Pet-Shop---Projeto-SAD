@@ -196,11 +196,13 @@ DROP TABLE IF EXISTS oltp.endereco;
 
 DROP TABLE IF EXISTS oltp.tipo_servico;
 
-DROP TABLE  IF EXISTS ag.agregado_fato_especie;
+DROP TABLE IF EXISTS ag.agregado_fato_tipo_servico;
 
-DROP TABLE  IF EXISTS ag.agregado_fato_filial;
+DROP TABLE IF EXISTS ag.agregado_fato_tipo_sevico; 
 
-DROP TABLE IF EXISTS ag.agregado_fato_tipo_sevico;
+DROP TABLE IF EXISTS ag.agregado_fato_especie;
+
+DROP TABLE IF EXISTS ag.agregado_fato_filial;
 
 DROP TABLE IF EXISTS ag.agregado_dim_tempo;
 
@@ -780,7 +782,7 @@ CREATE TABLE
 
 
 CREATE TABLE 
-		ag.agregado_fato_tipo_sevico(
+		ag.agregado_fato_tipo_servico(
 		id_fato_servico BIGINT IDENTITY (1, 1) PRIMARY KEY,
 		id_data INT NOT NULL,
         id_servico INT NOT NULL,

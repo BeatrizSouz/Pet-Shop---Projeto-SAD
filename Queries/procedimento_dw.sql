@@ -496,3 +496,4 @@ select * from ag.agregado_fato_especie;
        Dimensão agregada filial: Uma linha para cada filial
        Fato agregado filial: Contabiliza a quantidade de atendimento por filial por período 
 
+*/
