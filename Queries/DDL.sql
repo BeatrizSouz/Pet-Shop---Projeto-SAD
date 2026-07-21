@@ -196,11 +196,13 @@ DROP TABLE IF EXISTS oltp.endereco;
 
 DROP TABLE IF EXISTS oltp.tipo_servico;
 
-DROP TABLE  IF EXISTS ag.agregado_fato_especie;
+DROP TABLE IF EXISTS ag.agregado_fato_tipo_servico;
 
-DROP TABLE  IF EXISTS ag.agregado_fato_filial;
+DROP TABLE IF EXISTS ag.agregado_fato_tipo_sevico; 
 
-DROP TABLE IF EXISTS ag.agregado_fato_tipo_sevico;
+DROP TABLE IF EXISTS ag.agregado_fato_especie;
+
+DROP TABLE IF EXISTS ag.agregado_fato_filial;
 
 DROP TABLE IF EXISTS ag.agregado_dim_tempo;
 
@@ -265,12 +267,14 @@ CREATE TABLE
     oltp.funcionario (
         cod_funcionario INT IDENTITY (1, 1) PRIMARY KEY,
         cod_endereco INT,
-        cod_funcao INT,
+        cod_funcao INT NOT NULL,
+        cod_funcao_secundaria INT,
         matricula INT NOT NULL,
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
         CONSTRAINT fk_endereco_funcionario FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco (cod_endereco),
-        CONSTRAINT fk_funca_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao)
+        CONSTRAINT fk_funcao_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao),
+        CONSTRAINT fk_funcao_funcionario_segundaria FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao)
     );
 
 /* Os clientes */
@@ -421,6 +425,8 @@ CREATE TABLE
         cod_pet INT NOT NULL,
         cod_turno INT NOT NULL,
         cod_quadro_clinico INT NOT NULL,
+		cod_funcao_principal INT NOT NULL,
+        cod_funcao_secundaria INT NULL,
         data_inicio DATETIME2 NOT NULL,
         data_fim DATETIME2 NULL,
         prioridade VARCHAR(20) NOT NULL,
@@ -630,6 +636,7 @@ CREATE TABLE
         cod_funcao INT NOT NULL,
         funcao VARCHAR(100) NOT NULL,
         data_atualizacao DATE NOT NULL,
+        CONSTRAINT uq_dim_funcao_cod UNIQUE (cod_funcao)
     );
 
 /* ============================================================
@@ -690,8 +697,6 @@ CREATE TABLE
     Fato: especie 
 
 ============================================================*/
-
-
 
 
 GO
@@ -777,7 +782,7 @@ CREATE TABLE
 
 
 CREATE TABLE 
-		ag.agregado_fato_tipo_sevico(
+		ag.agregado_fato_tipo_servico(
 		id_fato_servico BIGINT IDENTITY (1, 1) PRIMARY KEY,
 		id_data INT NOT NULL,
         id_servico INT NOT NULL,

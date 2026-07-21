@@ -75,7 +75,6 @@ BEGIN
 END
 
 Go
-
 CREATE or Alter Procedure dw.sp_procedimento_dimensao_funcao_dw
 @data_carga Date
 AS
@@ -89,23 +88,27 @@ BEGIN
     
     /* Função - Tipo 1*/
     
-    Merge dw.dim_funcao as destino
-    Using (
-    	Select cod_funcao, funcao
-    	From staging.stg_funcao
-    	Where data_carga = @data_carga
-    ) As origem
-    ON(destino.cod_funcao = origem.cod_funcao)
+    MERGE dw.dim_funcao AS destino
+    USING (
+        SELECT 
+            cod_funcao, 
+            funcao
+        FROM staging.stg_funcao
+        WHERE data_carga = @data_carga
+    ) AS origem
+    ON (destino.cod_funcao = origem.cod_funcao)
     
-    When Matched and destino.funcao <> origem.funcao Then
-    	Update set
-    		destino.funcao = origem.funcao,
-    		destino.data_atualizacao = @data_carga
     
-	When Not Matched Then
-		Insert (cod_funcao, funcao, data_atualizacao)
-		Values (origem.cod_funcao,  origem.funcao, @data_carga);
-END
+    WHEN MATCHED AND destino.funcao <> origem.funcao THEN
+        UPDATE SET
+            destino.funcao = origem.funcao,
+            destino.data_atualizacao = @data_carga
+    
+    
+    WHEN NOT MATCHED THEN
+        INSERT (cod_funcao, funcao, data_atualizacao)
+        VALUES (origem.cod_funcao, origem.funcao, @data_carga);
+END;
 
 Go
 CREATE or Alter Procedure dw.sp_procedimento_dimensao_filial_dw
@@ -324,7 +327,7 @@ BEGIN
         dtu_turno.id_turno,
         dqc.id_quadro_clinico,
         dfnc.id_funcao,          
-        NULL,                   
+        dfnc2.id_funcao,                   
         dti.id_tempo,           
         dtf.id_tempo,           
         1 AS quantidade,        
@@ -359,8 +362,10 @@ BEGIN
     LEFT JOIN dw.dim_tempo dtf 
         ON CAST(stg.data_fim AS DATE) = dtf.data_completa
 
-    LEFT JOIN dw.dim_funcao dfnc 
-        ON dfnc.cod_funcao = stg.cod_turno
+    INNER JOIN dw.dim_funcao dfnc 
+        ON stg.cod_funcao_principal = dfnc.cod_funcao
+    LEFT JOIN dw.dim_funcao dfnc2 
+        ON stg.cod_funcao_secundaria = dfnc2.cod_funcao
         
     WHERE stg.data_carga = @data_carga;
 
@@ -370,13 +375,22 @@ GO
 EXEC dw.sp_carregar_dimensao_tempo '2026-07-01', '2026-08-18';
 
 EXEC dw.sp_procedimento_dimensoes_servico_dw '2026-07-18'; 
+Select * from DW_Atendimentos.dw.dim_filial;
 EXEC dw.sp_procedimento_dimensoes_funcionario_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_funcionario;
 EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_funcao;
 EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_filial;
 EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_pet;
 EXEC dw.sp_procedimento_dimensoes_tutor_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_tutor;
 EXEC dw.sp_procedimento_dimensoes_dw '2026-07-18';
+Select * from dw.dim_turno;
 EXEC dw.sp_procedimento_dimensoes_quadro_clinico_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_quadro_clinico dqc 
+
 Exec dw.sp_carregar_fato_atendimento '2026-07-18'
 
 Select * FROM dw.fato_atendimento
@@ -391,6 +405,7 @@ Select * FROM dw.fato_atendimento
 
 ============================================================*/
 GO
+
 CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_tempo
 AS
 BEGIN 
@@ -480,8 +495,7 @@ select * from ag.agregado_fato_especie;
        Dimensão agregada tempo: Utilizada por todas as tabelas agregadas 
        Dimensão agregada filial: Uma linha para cada filial
        Fato agregado filial: Contabiliza a quantidade de atendimento por filial por período 
-
-============================================================*/
+   ============================================================*/    
 GO
 CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_filial
 AS
@@ -548,5 +562,5 @@ select * from ag.agregado_fato_filial;
        Fato agregado tipo serviço: Contabiliza a quantidade de atendimento 
        por tipo serviço por período 
 
-============================================================*/
 
+*/
