@@ -91,20 +91,20 @@ BEGIN
     
     Merge dw.dim_funcao as destino
     Using (
-    	Select cod_funcao, funcao
+    	Select funcao_primaria, funcao_segundaria
     	From staging.stg_funcao
     	Where data_carga = @data_carga
     ) As origem
-    ON(destino.cod_funcao = origem.cod_funcao)
+    ON(destino.funcao_primaria = origem.funcao_primaria)
     
-    When Matched and destino.funcao <> origem.funcao Then
-    	Update set
-    		destino.funcao = origem.funcao,
+	WHEN MATCHED AND ISNULL(destino.funcao_segundaria, '') <> ISNULL(origem.funcao_segundaria, '') THEN
+		UPDATE SET
+			destino.funcao_segundaria = origem.funcao_segundaria,
     		destino.data_atualizacao = @data_carga
     
 	When Not Matched Then
-		Insert (cod_funcao, funcao, data_atualizacao)
-		Values (origem.cod_funcao,  origem.funcao, @data_carga);
+		Insert (funcao_primaria, funcao_segundaria, data_atualizacao)
+		Values (origem.funcao_primaria, origem.funcao_segundaria, @data_carga);
 END
 
 Go
@@ -284,19 +284,6 @@ BEGIN
 			Where c.cod_quadro_clinico = sq.cod_quadro_clinico and c.registro_atual = 1
 		);
 End
-
--- Garanta primeiro que a tabela de tempo tem o período coberto
-EXEC dw.sp_carregar_dimensao_tempo '2026-07-01', '2026-08-18';
-
-EXEC dw.sp_procedimento_dimensoes_servico_dw '2026-07-18'; 
-EXEC dw.sp_procedimento_dimensoes_funcionario_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensoes_tutor_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensoes_turno_dw '2026-07-18';
-EXEC dw.sp_procedimento_dimensoes_quadro_clinico_dw '2026-07-18';
-
 GO
 
 CREATE OR ALTER PROCEDURE dw.sp_carregar_fato_atendimento
@@ -337,7 +324,7 @@ BEGIN
         dtu_turno.id_turno,
         dqc.id_quadro_clinico,
         dfnc.id_funcao,          
-        NULL,                   
+        dfnc2.id_funcao,                   
         dti.id_tempo,           
         dtf.id_tempo,           
         1 AS quantidade,        
@@ -372,14 +359,132 @@ BEGIN
     LEFT JOIN dw.dim_tempo dtf 
         ON CAST(stg.data_fim AS DATE) = dtf.data_completa
 
-    LEFT JOIN dw.dim_funcao dfnc 
-        ON dfnc.cod_funcao = stg.cod_turno
+    FULL outer JOIN dw.dim_funcao dfnc 
+        ON dfnc.funcao_primaria = stg.cod_funcao_principal
+    
+    FULL outer JOIN dw.dim_funcao dfnc2 
+        ON dfnc2.funcao_segundaria = stg.cod_funcao_secundaria
         
     WHERE stg.data_carga = @data_carga;
 
 END;
 GO
+-- Garanta primeiro que a tabela de tempo tem o período coberto
+EXEC dw.sp_carregar_dimensao_tempo '2026-07-01', '2026-08-18';
+
+EXEC dw.sp_procedimento_dimensoes_servico_dw '2026-07-18'; 
+Select * from DW_Atendimentos.dw.dim_filial;
+EXEC dw.sp_procedimento_dimensoes_funcionario_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_funcionario;
+EXEC dw.sp_procedimento_dimensao_funcao_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_funcao;
+EXEC dw.sp_procedimento_dimensao_filial_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_filial;
+EXEC dw.sp_procedimento_dimensoes_pet_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_pet;
+EXEC dw.sp_procedimento_dimensoes_tutor_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_tutor;
+EXEC dw.sp_procedimento_dimensoes_dw '2026-07-18';
+Select * from dw.dim_turno;
+EXEC dw.sp_procedimento_dimensoes_quadro_clinico_dw '2026-07-18';
+Select * from DW_Atendimentos.dw.dim_quadro_clinico dqc 
 
 Exec dw.sp_carregar_fato_atendimento '2026-07-18'
+
+Select * FROM dw.fato_atendimento
+
+/*============================================================
+
+       Procedure agregados por espécie 
+
+       Dimensão agregada tempo: Utilizada por todas as tabelas agregadas 
+       Dimensão agregada especie: Uma linha para cada espécie
+       Fato agregado especie: Contabiliza a quantidade de atendimento por espécie por período 
+
+============================================================*/
+GO
+/*
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_tempo
+AS
+BEGIN 
+SET NOCOUNT ON; 
+    INSERT INTO ag.agregado_dim_tempo(
+        id_tempo_ag, 
+        data_completa, 
+        dia, 
+        mes, 
+        nome_mes, 
+        trimestre, 
+        ano, 
+        numero_dia_semana, 
+        nome_dia_semana
+    )
+    SELECT 
+        t.id_tempo, 
+        t.data_completa, 
+        t.dia, 
+        t.mes, 
+        t.nome_mes, 
+        t.trimestre, 
+        t.ano, 
+        t.numero_dia_semana, 
+        t.nome_dia_semana 
+    FROM dw.dim_tempo t
+   
+    WHERE NOT EXISTS (
+        SELECT 1 
+        FROM ag.agregado_dim_tempo destino 
+        WHERE destino.data_completa = t.data_completa
+    );
+END;
+GO
+
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_especie
+AS
+BEGIN 
+SET NOCOUNT ON; 
+
+    INSERT INTO ag.agregado_dim_especie(nome_especie)
+    SELECT DISTINCT especie
+    FROM dw.dim_pet 
+    WHERE especie NOT IN (
+        SELECT nome_especie FROM ag.agregado_dim_especie
+    );
+END;
+GO
+
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_fato_especie
+AS
+BEGIN 
+SET NOCOUNT ON; 
+
+    TRUNCATE TABLE ag.agregado_fato_especie;
+
+    INSERT INTO ag.agregado_fato_especie( 
+        id_data,
+        id_pet_especie,
+        quantidade
+    )
+    SELECT 
+        t.id_tempo,
+        e.id_especie,
+        sum(f.quantidade)
+    FROM dw.fato_atendimento f
+    JOIN dw.dim_tempo t on (f.id_tempo_inicio = t.id_tempo)
+    JOIN dw.dim_pet p on (f.id_pet = p.id_pet)
+    JOIN ag.agregado_dim_especie e ON p.especie = e.nome_especie 
+    GROUP BY 
+        t.id_tempo, 
+        e.id_especie;
+END;
+GO
+
+EXEC ag.sp_carregar_agregado_dimensao_especie
+EXEC ag.sp_carregar_agregado_dimensao_tempo
+EXEC ag.sp_carregar_agregado_fato_especie
+
+select * from ag.agregado_dim_tempo
+select * from ag.agregado_dim_especie
+select * from ag.agregado_fato_especie
 
 Select * FROM dw.fato_atendimento

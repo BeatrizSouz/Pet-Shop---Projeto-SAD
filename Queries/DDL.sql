@@ -83,6 +83,17 @@ IF NOT EXISTS (
 ) EXEC ('CREATE SCHEMA dw');
 
 GO
+
+IF NOT EXISTS (
+    SELECT
+        1
+    FROM
+        sys.schemas
+    WHERE
+        name = 'ag'
+) EXEC ('CREATE SCHEMA ag');
+
+GO
 /* ============================================================
 3. REMO��O DOS OBJETOS ANTERIORES
 
@@ -107,7 +118,24 @@ DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_tutor;
 
 DROP PROCEDURE IF EXISTS dw.sp_carregar_dim_pet;
 
+DROP PROCEDURE IF EXISTS dw.sp_carregar_dimensao_tempo;
+
 DROP PROCEDURE IF EXISTS staging.sp_carregar_staging;
+
+DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_dimensao_tempo
+
+DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_dimensao_especie
+
+DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_fato_especie
+
+DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_dimensao_filial
+
+DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_fato_filial
+
+DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_dimensao_servico
+
+DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_fato_servico
+
 
 GO
 DROP TABLE IF EXISTS dw.fato_atendimento;
@@ -168,6 +196,24 @@ DROP TABLE IF EXISTS oltp.endereco;
 
 DROP TABLE IF EXISTS oltp.tipo_servico;
 
+DROP TABLE  IF EXISTS ag.agregado_fato_especie;
+
+DROP TABLE  IF EXISTS ag.agregado_fato_filial;
+
+DROP TABLE IF EXISTS ag.agregado_fato_tipo_sevico;
+
+DROP TABLE IF EXISTS ag.agregado_dim_tempo;
+
+DROP TABLE IF EXISTS ag.agregado_dim_especie;
+
+DROP TABLE IF EXISTS ag.agregado_dim_filial;
+
+DROP TABLE IF EXISTS ag.agregado_dim_tipo_servico;
+
+
+
+
+
 GO
 /* ============================================================
 4. AMBIENTE OPERACIONAL - OLTP
@@ -219,12 +265,14 @@ CREATE TABLE
     oltp.funcionario (
         cod_funcionario INT IDENTITY (1, 1) PRIMARY KEY,
         cod_endereco INT,
-        cod_funcao INT,
+        cod_funcao INT NOT NULL,
+        cod_funcao_secundaria INT,
         matricula INT NOT NULL,
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
         CONSTRAINT fk_endereco_funcionario FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco (cod_endereco),
-        CONSTRAINT fk_funca_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao)
+        CONSTRAINT fk_funca_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao),
+        CONSTRAINT fk_funca_funcionario_segundaria FOREIGN KEY (cod_funcao_secundaria) REFERENCES oltp.funcao (cod_funcao)
     );
 
 /* Os clientes */
@@ -329,8 +377,8 @@ CREATE TABLE
 
 CREATE TABLE
     staging.stg_funcao (
-        cod_funcao INT NOT NULL,
-        funcao VARCHAR(100) NOT NULL,
+        funcao_primaria VARCHAR(100) NOT NULL,
+        funcao_segundaria VARCHAR(100),
         data_carga DATE NOT NULL
     );
 
@@ -375,6 +423,8 @@ CREATE TABLE
         cod_pet INT NOT NULL,
         cod_turno INT NOT NULL,
         cod_quadro_clinico INT NOT NULL,
+		cod_funcao_principal INT NOT NULL,
+        cod_funcao_secundaria INT NULL,
         data_inicio DATETIME2 NOT NULL,
         data_fim DATETIME2 NULL,
         prioridade VARCHAR(20) NOT NULL,
@@ -581,8 +631,8 @@ Etapas:
 CREATE TABLE
     dw.dim_funcao (
         id_funcao INT IDENTITY (1, 1) PRIMARY KEY,
-        cod_funcao INT NOT NULL,
-        funcao VARCHAR(100) NOT NULL,
+        funcao_primaria VARCHAR(100) NOT NULL,
+        funcao_segundaria Varchar(100),
         data_atualizacao DATE NOT NULL,
     );
 
@@ -631,3 +681,110 @@ CREATE TABLE
         CONSTRAINT fk_atendimento_tempo_inicio FOREIGN KEY (id_tempo_inicio) REFERENCES dw.dim_tempo (id_tempo),
         CONSTRAINT fk_atendimento_tempo_fim FOREIGN KEY (id_tempo_fim) REFERENCES dw.dim_tempo (id_tempo)
     );
+
+
+/*============================================================
+
+    Agregado de distribuição de atendimentos por Espécie
+
+    Dimensão:
+    - tempo 
+    - especie
+
+    Fato: especie 
+
+============================================================*/
+
+
+GO
+CREATE TABLE
+    ag.agregado_dim_tempo (
+        id_tempo_ag INT PRIMARY KEY,
+        data_completa DATE NOT NULL,
+        dia INT NOT NULL,
+        mes INT NOT NULL,
+        nome_mes VARCHAR(20) NOT NULL,
+        trimestre INT NOT NULL,
+        ano INT NOT NULL,
+        numero_dia_semana INT NOT NULL,
+        nome_dia_semana VARCHAR(20) NOT NULL,
+        CONSTRAINT uq_dim_tempo_data_completa UNIQUE (data_completa)
+    );
+
+CREATE TABLE
+    ag.agregado_dim_especie (
+        id_especie INT IDENTITY (1, 1) PRIMARY KEY,
+        nome_especie VARCHAR(100) NOT NULL
+    );
+
+
+CREATE TABLE 
+		ag.agregado_fato_especie(
+		id_fato_especie BIGINT IDENTITY (1, 1) PRIMARY KEY,
+		id_data INT NOT NULL,
+        id_pet_especie INT NOT NULL,
+        quantidade INT DEFAULT 1,
+        CONSTRAINT fk_data_especie FOREIGN KEY (id_data) REFERENCES ag.agregado_dim_tempo(id_tempo_ag),
+        CONSTRAINT fk_especie_agregado FOREIGN KEY (id_pet_especie) REFERENCES ag.agregado_dim_especie(id_especie)
+);
+
+/*============================================================
+
+    Agregado de distribuição de atendimentos por filial
+
+    Dimensão:
+    - tempo 
+    - filial 
+
+    Fato: especie 
+
+============================================================*/
+CREATE TABLE
+    ag.agregado_dim_filial (
+        id_filial INT PRIMARY KEY,
+        cidade VARCHAR(100) NOT NULL,
+        estado VARCHAR(100) NOT NULL,
+        nome_filial VARCHAR(100) NOT NULL
+    );
+
+
+CREATE TABLE 
+		ag.agregado_fato_filial(
+		id_fato_filial BIGINT IDENTITY (1, 1) PRIMARY KEY,
+		id_data INT NOT NULL,
+        id_filial INT NOT NULL,
+        quantidade INT DEFAULT 1,
+        CONSTRAINT fk_data_filial FOREIGN KEY (id_data) REFERENCES ag.agregado_dim_tempo(id_tempo_ag),
+        CONSTRAINT fk_filial_agregado FOREIGN KEY (id_filial) REFERENCES ag.agregado_dim_filial(id_filial)
+);
+
+
+/*============================================================
+
+    Agregado de distribuição de atendimentos por serviços
+
+    Dimensão:
+    - tempo 
+    - filial 
+
+    Fato: especie 
+
+============================================================*/
+
+CREATE TABLE
+    ag.agregado_dim_tipo_servico (
+        id_servico INT PRIMARY KEY,
+        nome_tipo_servico VARCHAR(100) NOT NULL
+    );
+
+
+CREATE TABLE 
+		ag.agregado_fato_tipo_sevico(
+		id_fato_servico BIGINT IDENTITY (1, 1) PRIMARY KEY,
+		id_data INT NOT NULL,
+        id_servico INT NOT NULL,
+        quantidade INT DEFAULT 1,
+        CONSTRAINT fk_data_servico FOREIGN KEY (id_data) REFERENCES ag.agregado_dim_tempo(id_tempo_ag),
+        CONSTRAINT fk_servico_agregado FOREIGN KEY (id_servico) REFERENCES ag.agregado_dim_tipo_servico(id_servico)
+);
+
