@@ -132,9 +132,9 @@ DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_dimensao_filial
 
 DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_fato_filial
 
-DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_dimensao_servico
+DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_dimensao_tipo_servico
 
-DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_fato_servico
+DROP PROCEDURE IF EXISTS ag.sp_carregar_agregado_fato_tipo_servico
 
 
 GO

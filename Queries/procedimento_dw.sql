@@ -502,8 +502,6 @@ AS
 BEGIN
 SET NOCOUNT ON; 
 
-    TRUNCATE TABLE ag.agregado_dim_filial;
-
     INSERT INTO ag.agregado_dim_filial(
         id_filial,
         cidade,
@@ -527,8 +525,6 @@ CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_fato_filial
 AS
 BEGIN 
 SET NOCOUNT ON; 
-
-    TRUNCATE TABLE ag.agregado_fato_filial;
 
     INSERT INTO ag.agregado_fato_filial( 
         id_data,
@@ -563,4 +559,53 @@ select * from ag.agregado_fato_filial;
        por tipo serviço por período 
 
 
-*/
+============================================================*/
+GO
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_tipo_servico
+AS
+BEGIN
+SET NOCOUNT ON; 
+
+    INSERT INTO ag.agregado_dim_tipo_servico(
+        id_servico,
+        nome_tipo_servico
+       )SELECT 
+            s.cod_tipo_servico,
+            s.nome_tipo_servico
+       FROM dw.dim_tipo_servico s
+       WHERE NOT EXISTS (
+            SELECT 1 
+            FROM ag.agregado_dim_tipo_servico destino 
+            WHERE destino.id_servico = s.id_tipo_servico
+       );
+
+END;
+GO
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_fato_tipo_servico
+AS
+BEGIN 
+SET NOCOUNT ON; 
+
+    INSERT INTO ag.agregado_fato_tipo_servico( 
+        id_data,
+        id_servico,
+        quantidade
+    )
+    SELECT 
+        t.id_tempo,
+        f.id_tipo_servico,
+        sum(f.quantidade)
+    FROM dw.fato_atendimento f
+    JOIN dw.dim_tempo t on (f.id_tempo_inicio = t.id_tempo)
+    JOIN dw.dim_tipo_servico s on (f.id_tipo_servico = s.id_tipo_servico)
+    GROUP BY t.id_tempo,f.id_tipo_servico 
+     
+END;
+GO
+EXEC ag.sp_carregar_agregado_dimensao_tipo_servico;
+EXEC ag.sp_carregar_agregado_dimensao_tempo;
+EXEC ag.sp_carregar_agregado_fato_tipo_servico;
+select * from ag.agregado_dim_tempo;
+select * from ag.agregado_dim_tipo_servico;
+select * from ag.agregado_fato_tipo_servico;
+
