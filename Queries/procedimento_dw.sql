@@ -495,5 +495,117 @@ select * from ag.agregado_fato_especie;
        Dimensão agregada tempo: Utilizada por todas as tabelas agregadas 
        Dimensão agregada filial: Uma linha para cada filial
        Fato agregado filial: Contabiliza a quantidade de atendimento por filial por período 
+   ============================================================*/    
+GO
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_filial
+AS
+BEGIN
+SET NOCOUNT ON; 
 
-*/
+    INSERT INTO ag.agregado_dim_filial(
+        id_filial,
+        cidade,
+        estado,
+        nome_filial
+       )SELECT 
+            df.id_filial,
+            df.cidade,
+            df.estado,
+            df.nome_filial
+       FROM dw.dim_filial df
+       WHERE NOT EXISTS (
+            SELECT 1 
+            FROM ag.agregado_dim_filial destino 
+            WHERE destino.id_filial = df.id_filial
+       );
+
+END;
+GO
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_fato_filial
+AS
+BEGIN 
+SET NOCOUNT ON; 
+
+    INSERT INTO ag.agregado_fato_filial( 
+        id_data,
+        id_filial,
+        quantidade
+    )
+    SELECT 
+        t.id_tempo,
+        fi.id_filial,
+        sum(f.quantidade)
+    FROM dw.fato_atendimento f
+    JOIN dw.dim_tempo t on (f.id_tempo_inicio = t.id_tempo)
+    JOIN dw.dim_filial fi on (f.id_filial = fi.id_filial)
+    GROUP BY t.id_tempo,fi.id_filial 
+     
+END;
+GO
+EXEC ag.sp_carregar_agregado_dimensao_filial;
+EXEC ag.sp_carregar_agregado_dimensao_tempo;
+EXEC ag.sp_carregar_agregado_fato_filial;
+select * from ag.agregado_dim_tempo;
+select * from ag.agregado_dim_filial;
+select * from ag.agregado_fato_filial;
+
+/*============================================================
+
+       Procedure agregados por tipo serviço 
+
+       Dimensão agregada tempo: Utilizada por todas as tabelas agregadas 
+       Dimensão agregada tipo servico: Uma linha para cada tipo serviço
+       Fato agregado tipo serviço: Contabiliza a quantidade de atendimento 
+       por tipo serviço por período 
+
+
+============================================================*/
+GO
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_tipo_servico
+AS
+BEGIN
+SET NOCOUNT ON; 
+
+    INSERT INTO ag.agregado_dim_tipo_servico(
+        id_servico,
+        nome_tipo_servico
+       )SELECT 
+            s.cod_tipo_servico,
+            s.nome_tipo_servico
+       FROM dw.dim_tipo_servico s
+       WHERE NOT EXISTS (
+            SELECT 1 
+            FROM ag.agregado_dim_tipo_servico destino 
+            WHERE destino.id_servico = s.id_tipo_servico
+       );
+
+END;
+GO
+CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_fato_tipo_servico
+AS
+BEGIN 
+SET NOCOUNT ON; 
+
+    INSERT INTO ag.agregado_fato_tipo_servico( 
+        id_data,
+        id_servico,
+        quantidade
+    )
+    SELECT 
+        t.id_tempo,
+        f.id_tipo_servico,
+        sum(f.quantidade)
+    FROM dw.fato_atendimento f
+    JOIN dw.dim_tempo t on (f.id_tempo_inicio = t.id_tempo)
+    JOIN dw.dim_tipo_servico s on (f.id_tipo_servico = s.id_tipo_servico)
+    GROUP BY t.id_tempo,f.id_tipo_servico 
+     
+END;
+GO
+EXEC ag.sp_carregar_agregado_dimensao_tipo_servico;
+EXEC ag.sp_carregar_agregado_dimensao_tempo;
+EXEC ag.sp_carregar_agregado_fato_tipo_servico;
+select * from ag.agregado_dim_tempo;
+select * from ag.agregado_dim_tipo_servico;
+select * from ag.agregado_fato_tipo_servico;
+
