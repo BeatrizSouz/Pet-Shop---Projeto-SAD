@@ -487,6 +487,9 @@ CREATE OR ALTER PROCEDURE ag.sp_carregar_agregado_dimensao_filial
 AS
 BEGIN
 SET NOCOUNT ON; 
+
+    TRUNCATE TABLE ag.agregado_dimensao_filial;
+
     INSERT INTO ag.agregado_dim_filial(
         id_filial,
         cidade,
@@ -535,3 +538,15 @@ EXEC ag.sp_carregar_agregado_fato_filial;
 select * from ag.agregado_dim_tempo;
 select * from ag.agregado_dim_filial;
 select * from ag.agregado_fato_filial;
+
+/*============================================================
+
+       Procedure agregados por tipo serviço 
+
+       Dimensão agregada tempo: Utilizada por todas as tabelas agregadas 
+       Dimensão agregada tipo servico: Uma linha para cada tipo serviço
+       Fato agregado tipo serviço: Contabiliza a quantidade de atendimento 
+       por tipo serviço por período 
+
+============================================================*/
+
