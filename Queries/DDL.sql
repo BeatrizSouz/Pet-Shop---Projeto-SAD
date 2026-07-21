@@ -271,8 +271,8 @@ CREATE TABLE
         nome_funcionario VARCHAR(100) NOT NULL,
         CRMV VARCHAR(100) NULL,
         CONSTRAINT fk_endereco_funcionario FOREIGN KEY (cod_endereco) REFERENCES oltp.endereco (cod_endereco),
-        CONSTRAINT fk_funca_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao),
-        CONSTRAINT fk_funca_funcionario_segundaria FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao)
+        CONSTRAINT fk_funcao_funcionario FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao),
+        CONSTRAINT fk_funcao_funcionario_segundaria FOREIGN KEY (cod_funcao) REFERENCES oltp.funcao (cod_funcao)
     );
 
 /* Os clientes */
