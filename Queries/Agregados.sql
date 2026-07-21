@@ -1,3 +1,7 @@
+USE DW_Atendimentos
+
+GO
+
 CREATE OR ALTER PROCEDURE ag.sp_carregar_dimensao_tempo
 AS
 BEGIN 
@@ -38,9 +42,9 @@ AS
 BEGIN 
 SET NOCOUNT ON; 
 
-    INSERT INTO ag.dim_especie(
-        id_pet, 
-        especie
+    INSERT INTO ag.agregado_dim_especie(
+        id_especie, 
+        nome_especie
     )
     SELECT 
         esp.id_pet, 
@@ -54,7 +58,7 @@ AS
 BEGIN 
 SET NOCOUNT ON; 
 
-    INSERT INTO ag.fato_especie(
+    INSERT INTO ag.agregado_fato_especie(
         id_data, 
         id_pet_especie,
         quantidade
@@ -72,3 +76,13 @@ GO
 
 EXEC ag.sp_carregar_fato_especie
 select * from dw.fato_atendimento;
+
+SELECT DISTINCT
+    p.id_pet
+FROM dw.fato_atendimento f
+JOIN dw.dim_pet p
+    ON f.id_pet = p.id_pet
+EXCEPT
+SELECT
+    id_especie
+FROM ag.agregado_dim_especie;

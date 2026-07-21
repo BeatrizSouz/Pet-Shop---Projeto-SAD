@@ -34,12 +34,12 @@ INSERT INTO oltp.funcao (funcao) VALUES
 ('Atendente'), ('Veterinário'), ('Auxiliar');
 
 -- 5. Funcion�rios
-INSERT INTO oltp.funcionario (cod_endereco, cod_funcao, matricula, nome_funcionario, CRMV) VALUES 
-(1, 1, 101, 'Ana Paula', NULL),
-(2, 2, 102, 'Ricardo Silva', 'CRM-SE 111'),
-(3, 3, 103, 'Fernanda Lima', 'CRM-SE 222'),
-(4, 2, 104, 'Marcos Oliveira', NULL),
-(5, 1, 105, 'Patrícia Rocha', 'CRM-SE 333');
+INSERT INTO oltp.funcionario (cod_endereco, cod_funcao, cod_funcao_secundaria, matricula, nome_funcionario, CRMV) VALUES 
+(1, 1, 3, 101, 'Ana Paula', NULL),
+(2, 2, null, 102, 'Ricardo Silva', 'CRM-SE 111'),
+(3, 3, 1,103, 'Fernanda Lima', 'CRM-SE 222'),
+(4, 2, null,104, 'Marcos Oliveira', 'CRM-SE 333'),
+(5, 1, Null,105, 'Patrícia Rocha', NULL);
 
 -- 6. Tutores
 INSERT INTO oltp.tutor (cpf, cod_endereco, nome_tutor, email, telefone) VALUES 
@@ -86,7 +86,7 @@ INSERT INTO oltp.atendimento (
 ) VALUES 
 (1, 2, 1, 1, 1, 1, 1, '2026-07-16 08:00:00', '2026-07-16 09:00:00', 'Baixa'), 
 (2, 2, 2, 1, 2, 2, 2, '2026-07-16 09:00:00', '2026-07-16 10:00:00', 'Alta'), 
-(5, 3, 3, 1, 3, 3, 3, '2026-07-16 10:00:00', '2026-07-16 12:00:00', 'Alta'),  
+(5, 3, 3, 2, 3, 3, 3, '2026-07-16 10:00:00', '2026-07-16 12:00:00', 'Alta'),  
 (3, 4, 5, 1, 4, 4, 4, '2026-07-16 14:00:00', '2026-07-16 14:30:00', 'Média'), 
 (1, 5, 1, 1, 5, 5, 5, '2026-07-16 15:00:00', '2026-07-16 16:00:00', 'Baixa'); 
 
