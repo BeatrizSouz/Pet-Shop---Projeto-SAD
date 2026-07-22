@@ -373,7 +373,6 @@ END;
 GO
 -- Garanta primeiro que a tabela de tempo tem o período coberto
 EXEC dw.sp_carregar_dimensao_tempo '2026-07-01', '2026-08-18';
-
 EXEC dw.sp_procedimento_dimensoes_servico_dw '2026-07-18'; 
 Select * from DW_Atendimentos.dw.dim_filial;
 EXEC dw.sp_procedimento_dimensoes_funcionario_dw '2026-07-18';
