@@ -1,3 +1,4 @@
+USE DW_Atendimentos
 /*Qual o número de atendimentos por Filial, por período?*/
 SELECT 
     af.nome_filial,
