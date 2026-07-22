@@ -1,9 +1,6 @@
 USE DW_Atendimentos;
 
 GO
-
-SELECT * FROM oltp.quadro_clinico
-
 /* ============================================================
    5. DADOS INICIAIS DO AMBIENTE OPERACIONAL (5 REGISTROS)
    ============================================================ */
