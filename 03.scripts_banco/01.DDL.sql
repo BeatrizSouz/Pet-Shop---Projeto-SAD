@@ -317,7 +317,6 @@ CREATE TABLE
         cod_tipo_servico INT NOT NULL,
         cod_filial INT NOT NULL,
         cod_funcionario INT NOT NULL,
-        cod_tutor INT NOT NULL,
         cod_pet INT NOT NULL,
         cod_quadro_clinico INT NOT NULL,
         cod_turno INT NOT NULL,
@@ -327,7 +326,6 @@ CREATE TABLE
         CONSTRAINT fk_atendimento_tipo_servico FOREIGN KEY (cod_tipo_servico) REFERENCES oltp.tipo_servico (cod_tipo_servico),
         CONSTRAINT fk_atendimento_filial FOREIGN KEY (cod_filial) REFERENCES oltp.filial (cod_filial),
         CONSTRAINT fk_atendimento_funcionario FOREIGN KEY (cod_funcionario) REFERENCES oltp.funcionario (cod_funcionario),
-        CONSTRAINT fk_atendimento_tutor FOREIGN KEY (cod_tutor) REFERENCES oltp.tutor (cod_tutor),
         CONSTRAINT fk_atendimento_pet FOREIGN KEY (cod_pet) REFERENCES oltp.pet (cod_pet),
         CONSTRAINT fk_atendimento_turno FOREIGN KEY (cod_turno) REFERENCES oltp.turno (cod_turno),
         CONSTRAINT fk_atendimento_quadro_clinico FOREIGN KEY (cod_quadro_clinico) REFERENCES oltp.quadro_clinico (cod_quadro_clinico)

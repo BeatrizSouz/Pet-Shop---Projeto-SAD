@@ -94,7 +94,7 @@ BEGIN
         a.cod_tipo_servico, 
         a.cod_filial, 
         a.cod_funcionario, 
-        a.cod_tutor, 
+        p.cod_tutor,
         a.cod_pet, 
         a.cod_quadro_clinico, 
         a.cod_turno, 
@@ -109,8 +109,9 @@ BEGIN
     INNER JOIN oltp.tipo_servico ts 
         ON a.cod_tipo_servico = ts.cod_tipo_servico
     INNER JOIN oltp.funcionario fu 
-        ON a.cod_funcionario = fu.cod_funcionario;
-    
+        ON a.cod_funcionario = fu.cod_funcionario
+    INNER JOIN oltp.pet p 
+        ON a.cod_pet = p.cod_pet;
 END;
 GO
 
